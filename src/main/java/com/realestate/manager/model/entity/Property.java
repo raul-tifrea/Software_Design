@@ -20,7 +20,7 @@ public class Property {
     private String description;
 
     @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal price;
+    private double price;
 
     @Column(nullable = false)
     private String location;
@@ -31,7 +31,7 @@ public class Property {
 
     public Property() {}
 
-    public Property(String title, String description, BigDecimal price, String location, Integer sellerId) {
+    public Property(String title, String description, double price, String location, Integer sellerId) {
         this.title = title;
         this.description = description;
         this.price = price;
@@ -39,22 +39,46 @@ public class Property {
         this.sellerId = sellerId;
     }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    public Integer getId() {
+        return id;
+    }
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public String getTitle() {
+        return title;
+    }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getDescription() {
+        return description;
+    }
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
+    public double getPrice() {
+        return price;
+    }
+    public void setPrice(double price) {
+        this.price = price;
+    }
 
-    public String getLocation() { return location; }
-    public void setLocation(String location) { this.location = location; }
+    public String getLocation() {
+        return location;
+    }
+    public void setLocation(String location) {
+        this.location = location;
+    }
 
-    public Integer getSellerId() { return sellerId; }
-    public void setSellerId(Integer sellerId) { this.sellerId = sellerId; }
+    public Integer getSellerId() {
+        return sellerId;
+    }
+    public void setSellerId(Integer sellerId) {
+        this.sellerId = sellerId;
+    }
 }
 
