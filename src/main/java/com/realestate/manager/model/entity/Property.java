@@ -19,7 +19,7 @@ public class Property {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(nullable = false)
     private double price;
 
     @Column(nullable = false)

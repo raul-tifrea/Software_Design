@@ -38,7 +38,7 @@ public class PropertyService {
     }
 
     public List<Property> searchPropertyByLocation(String location){
-        return propertyRepository.findByLocationContainingIngnoreCase(location);
+        return propertyRepository.findByLocationContainingIgnoreCase(location);
     }
 
     public List<Property> searchPropertyByTitle(String title){

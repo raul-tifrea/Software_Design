@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface PropertyRepository  extends JpaRepository<Property, Integer> {
 
-    List<Property> findByLocationContainingIngnoreCase(String location);
+    List<Property> findByLocationContainingIgnoreCase(String location);
     List<Property> findByTitleContainingIgnoreCase(String location);
 
 }
