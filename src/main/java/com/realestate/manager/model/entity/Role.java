@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
     @Column(name = "role_name", nullable = false, length = 50, unique = true)
     private String roleName;
 
@@ -18,7 +18,7 @@ public class Role {
             this.roleName = roleName;
     }
 
-    public int getId() {
+    public Integer getId() {
             return id;
     }
     public void setId(int id) {
