@@ -28,15 +28,18 @@ public class Property {
     @Column(name = "seller_id", nullable = false)
     private Integer sellerId;
 
+    @Column(name = "image_url")
+    private String imageUrl;
 
     public Property() {}
 
-    public Property(String title, String description, double price, String location, Integer sellerId) {
+    public Property(String title, String description, double price, String location, Integer sellerId, String imageUrl) {
         this.title = title;
         this.description = description;
         this.price = price;
         this.location = location;
         this.sellerId = sellerId;
+        this.imageUrl = imageUrl;
     }
 
     public Integer getId() {
@@ -79,6 +82,14 @@ public class Property {
     }
     public void setSellerId(Integer sellerId) {
         this.sellerId = sellerId;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }
 

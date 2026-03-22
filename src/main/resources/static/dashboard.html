@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real Estate Hub</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f4f9; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px;}
+        .panel { padding: 15px; border-radius: 8px; margin-bottom: 20px; background: white; border: 1px solid #ddd; }
+        .admin-panel { border-left: 5px solid #ff4d4d; }
+        .action-panel { border-left: 5px solid #28a745; }
+        .hidden { display: none; }
+
+        input, select, button { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
+        button { cursor: pointer; background-color: #007bff; color: white; border: none; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-edit { background-color: #ffc107; color: black; }
+        .btn-logout { background-color: #6c757d; }
+
+        .property-card { background: white; border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;}
+        .property-info h3 { margin: 0 0 5px 0; color: #333; }
+        .property-info p { margin: 2px 0; color: #666; }
+        .price-tag { font-size: 1.2em; font-weight: bold; color: #28a745; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Real Estate Hub</h1>
+    <div style="text-align: right;">
+        Logged in as: <strong id="displayUser"></strong><br>
+        <button class="btn-logout" id="logoutBtn" onclick="logout()">Logout</button>
+    </div>
+</div>
+
+<div id="adminSection" class="panel admin-panel hidden">
+    <h3>Admin Controls</h3>
+    <button onclick="window.location.href='manage-users.html'">Manage All Users</button>
+</div>
+
+<div id="addPropertySection" class="panel action-panel hidden">
+    <h3>List a New Property</h3>
+    <input type="text" id="newTitle" placeholder="Title (e.g., Cozy Cabin)" required>
+    <input type="text" id="newLocation" placeholder="Location" required>
+    <input type="number" id="newPrice" placeholder="Price ($)" required>
+    <input type="text" id="newDesc" placeholder="Description" style="width: 300px;">
+    <input type="text" id="newImage" placeholder="Photo URL (https://...)">
+    <button onclick="createProperty()">Post Listing</button>
+</div>
+
+<div class="panel">
+    <h3>Search & Sort Properties</h3>
+    <select id="searchType">
+        <option value="location">Search by Location</option>
+        <option value="title">Search by Title</option>
+    </select>
+    <input type="text" id="keyword" placeholder="Enter search term...">
+
+    <strong style="margin-left: 15px;">Sort by:</strong>
+    <select id="sortBy">
+        <option value="price">Price</option>
+        <option value="title">Title</option>
+        <option value="location">Location</option>
+    </select>
+    <select id="sortDir">
+        <option value="asc">Ascending (Low-High / A-Z)</option>
+        <option value="desc">Descending (High-Low / Z-A)</option>
+    </select>
+
+    <button style="background-color: #28a745;" onclick="loadProperties()">Apply Filters</button>
+    <button style="background-color: #6c757d;" onclick="resetFilters()">Clear</button>
+</div>
+
+<div id="propertiesList">
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080/api/properties';
+
+    const currentUserId = localStorage.getItem('userId');
+    const currentRole = localStorage.getItem('roleName') || 'GUEST';
+    const currentUsername = localStorage.getItem('username') || 'Guest';
+
+    document.getElementById('displayUser').innerText = currentUsername;
+    if (currentRole === 'GUEST') {
+        document.getElementById('logoutBtn').innerText = "Sign In / Register";
+    }
+
+    if (currentRole === 'ADMIN') {
+        document.getElementById('adminSection').classList.remove('hidden');
+        document.getElementById('addPropertySection').classList.remove('hidden');
+    } else if (currentRole === 'SELLER_BUYER') {
+        document.getElementById('addPropertySection').classList.remove('hidden');
+    }
+
+    function loadProperties() {
+        const searchType = document.getElementById('searchType').value;
+        const keyword = document.getElementById('keyword').value;
+        const sortBy = document.getElementById('sortBy').value;
+        const sortDir = document.getElementById('sortDir').value;
+
+        const url = `${API_BASE}?searchType=${searchType}&keyword=${keyword}&sortBy=${sortBy}&sortDir=${sortDir}`;
+
+        fetch(url)
+        .then(res => res.json())
+        .then(properties => {
+            const list = document.getElementById('propertiesList');
+            list.innerHTML = '';
+
+            if(properties.length === 0) {
+                list.innerHTML = '<p><i>No properties found matching those criteria.</i></p>';
+                return;
+            }
+
+            properties.forEach(prop => {
+                const isOwner = prop.sellerId === parseInt(currentUserId);
+                const isAdmin = currentRole === 'ADMIN';
+                const canEdit = isAdmin || (currentRole === 'SELLER_BUYER' && isOwner);
+
+                let actionButtons = '';
+                if (canEdit) {
+                    actionButtons = `
+                        <button class="btn-edit" onclick="editProperty(${prop.id}, '${prop.title}', '${prop.location}', ${prop.price}, '${prop.description}', '${prop.imageUrl || ''}')">Edit</button>
+                        <button class="btn-danger" onclick="deleteProperty(${prop.id})">Delete</button>
+                    `;
+                }
+
+                list.innerHTML += `
+                        <div class="property-card" style="display: flex;">
+                            <img src="${prop.imageUrl || 'https://via.placeholder.com/150'}" alt="House" style="width: 150px; height: 150px; object-fit: cover; border-radius: 5px; margin-right: 20px;">
+
+                            <div class="property-info" style="flex-grow: 1;">
+                                <h3>${prop.title}</h3>
+                                <p><strong>Location:</strong> ${prop.location}</p>
+                                <p><strong>Description:</strong> ${prop.description}</p>
+                                </div>
+
+                            <div style="text-align: right; min-width: 120px;">
+                                <div class="price-tag">$${prop.price.toLocaleString()}</div>
+                                <div style="margin-top: 10px;">
+                                    ${actionButtons}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            });
+        });
+    }
+
+    function createProperty() {
+        const newProp = {
+            title: document.getElementById('newTitle').value,
+            location: document.getElementById('newLocation').value,
+            price: parseFloat(document.getElementById('newPrice').value),
+            description: document.getElementById('newDesc').value,
+            imageUrl: document.getElementById('newImage').value
+        };
+
+        fetch(`${API_BASE}?sellerId=${currentUserId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newProp)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Could not create property");
+            // Clear the form after success
+            document.getElementById('newTitle').value = '';
+            document.getElementById('newLocation').value = '';
+            document.getElementById('newPrice').value = '';
+            document.getElementById('newDesc').value = '';
+            document.getElementById('newImage').value = '';
+            loadProperties();
+        })
+        .catch(err => alert(err.message));
+    }
+
+    function editProperty(id, oldTitle, oldLoc, oldPrice, oldDesc, oldImage) {
+        const newTitle = prompt("New Title:", oldTitle);
+        const newLoc = prompt("New Location:", oldLoc);
+        const newPrice = prompt("New Price:", oldPrice);
+        const newDesc = prompt("New Description:", oldDesc);
+        const newImage = prompt("New Image URL:", oldImage);
+
+        if (newTitle && newLoc && newPrice) {
+            const updatedProp = {
+                title: newTitle,
+                location: newLoc,
+                price: parseFloat(newPrice),
+                description: newDesc,
+                imageUrl: newImage
+            };
+
+            fetch(`${API_BASE}/${id}?sellerId=${currentUserId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedProp)
+            })
+            .then(res => {
+                if (!res.ok) alert("Error updating property.");
+                loadProperties();
+            });
+        }
+    }
+
+
+    function deleteProperty(id) {
+        if (!confirm("Are you sure you want to delete this listing?")) return;
+
+        fetch(`${API_BASE}/${id}?sellerId=${currentUserId}`, {
+            method: 'DELETE'
+        })
+        .then(res => {
+            if (!res.ok) alert("Error deleting property.");
+            loadProperties();
+        });
+    }
+
+    function resetFilters() {
+        document.getElementById('keyword').value = '';
+        loadProperties();
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'auth.html';
+    }
+    loadProperties();
+</script>
+</body>
+</html>

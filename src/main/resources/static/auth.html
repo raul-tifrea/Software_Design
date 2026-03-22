@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome Real Estate Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 80px; background-color: #f4f4f9; }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .box {
+            border: 1px solid #ddd;
+            padding: 30px;
+            width: 320px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .hidden { display: none; }
+
+        input {
+            display: block;
+            width: 90%;
+            margin: 12px auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 12px 20px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 96%;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        button.success { background-color: #28a745; }
+
+        .link-btn {
+            background: none;
+            color: #007bff;
+            border: none;
+            padding: 0;
+            font: inherit;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 15px;
+            font-size: 0.9em;
+            width: auto;
+        }
+
+        .guest-btn {
+            background: none;
+            color: #6c757d;
+            border: none;
+            padding: 0;
+            font: inherit;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 10px;
+            font-size: 0.9em;
+            width: auto;
+        }
+
+        .divider {
+            margin: 20px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .message { margin-top: 15px; font-weight: bold; font-size: 0.9em;}
+        .error { color: red; }
+    </style>
+</head>
+<body>
+
+<h1 style="color: #333; margin-bottom: 30px;">Real Estate Hub</h1>
+
+<div class="container">
+
+    <div class="box" id="loginView">
+        <h2 style="margin-top: 0; color: #333;">Sign In</h2>
+        <input type="text" id="loginUsername" placeholder="Username" required>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <button onclick="attemptLogin()">Log In</button>
+        <div id="loginMsg" class="message error"></div>
+
+        <button class="link-btn" onclick="toggleView('registerView')">Register</button>
+
+        <div class="divider"></div>
+
+        <button class="guest-btn" onclick="continueAsGuest()">Continue as Guest &rarr;</button>
+    </div>
+
+    <div class="box hidden" id="registerView">
+        <h2 style="margin-top: 0; color: #333;">Create Account</h2>
+        <input type="text" id="regUsername" placeholder="Choose a Username" required>
+        <input type="email" id="regEmail" placeholder="Email Address" required>
+        <input type="password" id="regPassword" placeholder="Create a Password" required>
+        <button class="success" onclick="attemptRegister()">Register</button>
+        <div id="regMsg" class="message"></div>
+
+        <button class="link-btn" style="color: #666;" onclick="toggleView('loginView')">&larr; Back to Login</button>
+    </div>
+
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080/api/users';
+
+    function toggleView(viewId) {
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('registerView').classList.add('hidden');
+        document.getElementById('loginMsg').innerText = '';
+        document.getElementById('regMsg').innerText = '';
+        document.getElementById(viewId).classList.remove('hidden');
+    }
+
+    function attemptLogin() {
+        const user = document.getElementById('loginUsername').value;
+        const pass = document.getElementById('loginPassword').value;
+
+        document.getElementById('loginMsg').innerText = '';
+
+        fetch(`${API_BASE}/login?username=${user}&password=${pass}`, { method: 'POST' })
+        .then(async response => {
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || "Invalid credentials");
+            }
+            return response.json();
+        })
+        .then(data => {
+            localStorage.setItem('userId', data.id);
+            localStorage.setItem('roleName', data.role.roleName);
+            localStorage.setItem('username', data.username);
+            window.location.href = 'dashboard.html';
+        })
+        .catch(error => document.getElementById('loginMsg').innerText = error.message);
+    }
+
+    function attemptRegister() {
+        const newUser = {
+            username: document.getElementById('regUsername').value,
+            email: document.getElementById('regEmail').value,
+            passwordHash: document.getElementById('regPassword').value
+        };
+
+        fetch(`${API_BASE}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newUser)
+        })
+        .then(async response => {
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || "Registration failed");
+            }
+            return response.json();
+        })
+        .then(data => {
+            const msgBox = document.getElementById('regMsg');
+            msgBox.style.color = 'green';
+            msgBox.innerText = "Success! You can now log in.";
+            document.getElementById('regUsername').value = '';
+            document.getElementById('regEmail').value = '';
+            document.getElementById('regPassword').value = '';
+            setTimeout(() => toggleView('loginView'), 2000);
+        })
+        .catch(error => {
+            const msgBox = document.getElementById('regMsg');
+            msgBox.style.color = 'red';
+            msgBox.innerText = error.message;
+        });
+    }
+
+    function continueAsGuest() {
+        localStorage.setItem('userId', '');
+        localStorage.setItem('roleName', 'GUEST');
+        localStorage.setItem('username', 'Guest Visitor');
+        window.location.href = 'dashboard.html';
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Users - Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f9;}
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px;}
+        .form-box { background: white; padding: 20px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 20px; }
+        input, select { padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 4px;}
+        button { padding: 8px 15px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-edit { background-color: #ffc107; color: black; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #ffe6e6; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Admin Control Panel: User Management</h1>
+    <button onclick="window.location.href='dashboard.html'">← Back to Dashboard</button>
+</div>
+
+<div class="form-box">
+    <h3>Create New User</h3>
+    <input type="text" id="newUsername" placeholder="Username" required>
+    <input type="email" id="newEmail" placeholder="Email Address" required>
+    <input type="text" id="newPassword" placeholder="Password" required>
+    <select id="newRole">
+        <option value="1">ADMIN</option>
+        <option value="3">SELLER_BUYER</option>
+    </select>
+    <button onclick="createUser()">Create User</button>
+    <div id="errorMsg" style="color:red; margin-top:10px;"></div>
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody id="userTableBody">
+    </tbody>
+</table>
+
+<script>
+
+    const requesterId = localStorage.getItem('userId');
+    const currentRole = localStorage.getItem('roleName');
+
+    if (currentRole !== 'ADMIN') {
+        alert("SECURITY VIOLATION: You do not have permission to view this page.");
+        window.location.href = 'dashboard.html';
+    }
+
+    const API_BASE = 'http://localhost:8080/api/users';
+
+
+    function loadUsers() {
+
+       fetch(`${API_BASE}?reqId=${requesterId}`)
+        .then(res => res.json())
+        .then(users => {
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+            users.forEach(user => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.username}</td>
+                        <td>${user.email}</td>
+                        <td><strong>${user.role.roleName}</strong></td>
+                        <td>
+                            <button class="btn-edit" onclick="editUser(${user.id}, '${user.username}', '${user.email}')">Edit</button>
+                            <button class="btn-danger" onclick="deleteUser(${user.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+
+    function createUser() {
+        const newUser = {
+            username: document.getElementById('newUsername').value,
+            email: document.getElementById('newEmail').value,
+            passwordHash: document.getElementById('newPassword').value,
+            role: { id: parseInt(document.getElementById('newRole').value) }
+        };
+
+        fetch(`${API_BASE}?reqId=${requesterId}`, { // Changed to reqId=
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newUser)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Could not create user.");
+
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newEmail').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('errorMsg').innerText = '';
+            loadUsers();
+        })
+        .catch(err => document.getElementById('errorMsg').innerText = err.message);
+    }
+
+
+    function editUser(userId, oldUsername, oldEmail) {
+
+        const newUsername = prompt("Enter new username:", oldUsername);
+        const newEmail = prompt("Enter new email:", oldEmail);
+        const newPassword = prompt("Enter new password for this user:");
+
+        if (newUsername && newEmail && newPassword) {
+            const updatedUser = {
+                username: newUsername,
+                email: newEmail,
+                passwordHash: newPassword
+            };
+
+            fetch(`${API_BASE}/${userId}?reqId=${requesterId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedUser)
+            })
+            .then(res => {
+                if (!res.ok) alert("Error updating user.");
+                loadUsers(); // Refresh the table
+            });
+        }
+    }
+
+
+    function deleteUser(userId) {
+        if (!confirm("Are you sure you want to permanently delete this user?")) return;
+
+        fetch(`${API_BASE}/${userId}?reqId=${requesterId}`, { // Changed to reqId=
+            method: 'DELETE'
+        })
+        .then(res => {
+            if (!res.ok) alert("Error deleting user. Make sure they don't own any properties first!");
+            loadUsers();
+        });
+    }
+
+    loadUsers();
+</script>
+</body>
+</html>

@@ -20,6 +20,31 @@ public class UserController {
         this.userService = userService;
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestParam String username, @RequestParam String password){
+        try{
+            User user = userService.authenticate(username, password);
+            return ResponseEntity.ok(user);
+        }catch (RuntimeException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody User user){
+        try{
+            User newUser = userService.register(user);
+            return ResponseEntity.ok(newUser);
+        }catch (RuntimeException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
+
+
+
+
     @GetMapping
     public ResponseEntity<?> getAllUsers(@RequestParam Integer reqId)
     {

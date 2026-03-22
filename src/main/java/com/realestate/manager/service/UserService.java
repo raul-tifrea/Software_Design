@@ -21,9 +21,26 @@ public class UserService {
         this.roleRepository = roleRepository;
     }
 
+    public User authenticate(String username, String passwordHash) {
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("Username not found"));
+
+        if(!user.getPasswordHash().equals(passwordHash)){
+            throw new RuntimeException("Password Mismatch");
+        }
+
+        return user;
+    }
+
+    public User register(User user){
+        Role role = roleRepository.findByRoleName("SELLER_BUYER").orElseThrow(() -> new RuntimeException("Role not found"));
+        user.setRole(role);
+        return userRepository.save(user);
+    }
+
+
     private void verifAdmin(Integer userId){
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found in the database"));
-        if(!user.getRole().getRoleName().equals("Admin")){
+        if(!user.getRole().getRoleName().equals("ADMIN")){
             throw new RuntimeException("Only Admins can manage users");
         }
     }

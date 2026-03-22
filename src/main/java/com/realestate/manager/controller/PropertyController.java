@@ -3,6 +3,7 @@ package com.realestate.manager.controller;
 
 import com.realestate.manager.model.entity.Property;
 import com.realestate.manager.service.PropertyService;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,24 +20,30 @@ public class PropertyController {
     }
 
     @GetMapping
-    public List<Property> getAllProperties(){
-        return propertyService.getAllProperties();
+    public ResponseEntity<?> getAllProperties(@RequestParam String searchType, @RequestParam String keyword, @RequestParam String sortBy, @RequestParam String sortDir){
+        try{
+            List<Property> properties = propertyService.getAllProperties(searchType, keyword, sortBy, sortDir);
+            return ResponseEntity.ok(properties);
+        }catch (RuntimeException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+
     }
 
     @PostMapping
-    public ResponseEntity<?> createProperty(@RequestBody Property property, @RequestParam Integer id) {
+    public ResponseEntity<?> createProperty(@RequestBody Property property, @RequestParam Integer sellerId) {
         try{
-            Property savedProperty = propertyService.saveProperty(property, id);
+            Property savedProperty = propertyService.saveProperty(property, sellerId);
             return  ResponseEntity.ok().body(savedProperty);
         }catch (RuntimeException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @PutMapping
-    public ResponseEntity<?> updateProperty(@RequestBody Property property, @RequestParam Integer id) {
+    @PutMapping("/{propertyId}")
+    public ResponseEntity<?> updateProperty(@PathVariable Integer propertyId,@RequestBody Property property, @RequestParam Integer sellerId) {
         try{
-            Property updatedProperty = propertyService.saveProperty(property, id);
+            Property updatedProperty = propertyService.updateProperty(property, sellerId, propertyId);
             return  ResponseEntity.ok(updatedProperty);
         }catch (RuntimeException e){
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -44,10 +51,10 @@ public class PropertyController {
     }
 
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProperty(@PathVariable Integer id, @RequestParam Integer propertyId) {
+    @DeleteMapping("/{propertyId}")
+    public ResponseEntity<?> deleteProperty(@PathVariable Integer propertyId,  @RequestParam Integer sellerId) {
         try{
-            propertyService.deleteProperty(propertyId, id);
+            propertyService.deleteProperty(propertyId, sellerId);
             return  ResponseEntity.ok("Property has been deleted");
         }catch (RuntimeException e){
             return ResponseEntity.badRequest().body(e.getMessage());
