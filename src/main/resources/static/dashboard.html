@@ -80,7 +80,7 @@
     const currentUserId = localStorage.getItem('userId');
     const currentRole = localStorage.getItem('roleName') || 'GUEST';
     const currentUsername = localStorage.getItem('username') || 'Guest';
-
+    const authToken = localStorage.getItem('authToken');
     document.getElementById('displayUser').innerText = currentUsername;
     if (currentRole === 'GUEST') {
         document.getElementById('logoutBtn').innerText = "Sign In / Register";
@@ -158,12 +158,12 @@
 
         fetch(`${API_BASE}?sellerId=${currentUserId}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json',
+            'Authorization': 'Basic ' + authToken},
             body: JSON.stringify(newProp)
         })
         .then(res => {
             if (!res.ok) throw new Error("Could not create property");
-            // Clear the form after success
             document.getElementById('newTitle').value = '';
             document.getElementById('newLocation').value = '';
             document.getElementById('newPrice').value = '';
@@ -192,7 +192,8 @@
 
             fetch(`${API_BASE}/${id}?sellerId=${currentUserId}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json',
+                'Authorization': 'Basic ' + authToken},
                 body: JSON.stringify(updatedProp)
             })
             .then(res => {
@@ -207,7 +208,8 @@
         if (!confirm("Are you sure you want to delete this listing?")) return;
 
         fetch(`${API_BASE}/${id}?sellerId=${currentUserId}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {'Authorization': 'Basic ' + authToken}
         })
         .then(res => {
             if (!res.ok) alert("Error deleting property.");

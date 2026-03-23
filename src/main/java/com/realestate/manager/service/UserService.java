@@ -6,6 +6,7 @@ import com.realestate.manager.model.entity.User;
 import com.realestate.manager.repository.RoleRepository;
 import com.realestate.manager.repository.UserRepository;
 import jakarta.persistence.criteria.CriteriaBuilder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,25 +16,29 @@ import java.util.Optional;
 public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository,  RoleRepository roleRepository) {
+    public UserService(UserRepository userRepository,  RoleRepository roleRepository,  PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public User authenticate(String username, String passwordHash) {
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("Username not found"));
-
-        if(!user.getPasswordHash().equals(passwordHash)){
-            throw new RuntimeException("Password Mismatch");
+    public User authenticate(String username, String rawPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Error: User not found."));
+        if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
+            throw new RuntimeException("Error: Invalid password.");
         }
-
         return user;
     }
 
+
     public User register(User user){
-        Role role = roleRepository.findByRoleName("SELLER_BUYER").orElseThrow(() -> new RuntimeException("Role not found"));
+        Role role = roleRepository.findByRoleName("SELLER_BUYER")
+            .orElseThrow(() -> new RuntimeException("Error: Default role not found."));
         user.setRole(role);
+user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         return userRepository.save(user);
     }
 
@@ -47,9 +52,10 @@ public class UserService {
 
     public User createUser(User user, Integer roleId){
         verifAdmin(roleId);
-        Role role = roleRepository.findById(user.getRole().getId()).orElseThrow(() -> new RuntimeException("Role not found."));
+        Role role = roleRepository.findById(user.getRole().getId())
+                .orElseThrow(() -> new RuntimeException("Role not found."));
         user.setRole(role);
-
+        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         return userRepository.save(user);
     }
 
@@ -62,7 +68,9 @@ public class UserService {
         verifAdmin(requestId);
         User existingUser = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found in the database"));
         existingUser.setUsername(updatedUser.getUsername());
-        existingUser.setPasswordHash(updatedUser.getPasswordHash());
+        if (updatedUser.getPasswordHash() != null && !updatedUser.getPasswordHash().isEmpty()) {
+            existingUser.setPasswordHash(passwordEncoder.encode(updatedUser.getPasswordHash()));
+        }
         existingUser.setEmail(updatedUser.getEmail());
 
         if(updatedUser.getRole() != null && updatedUser.getRole().getId() != null){

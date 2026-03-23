@@ -130,6 +130,8 @@
 
         document.getElementById('loginMsg').innerText = '';
 
+        const encodedToken = btoa(user + ":" + pass);
+
         fetch(`${API_BASE}/login?username=${user}&password=${pass}`, { method: 'POST' })
         .then(async response => {
             if (!response.ok) {
@@ -142,6 +144,8 @@
             localStorage.setItem('userId', data.id);
             localStorage.setItem('roleName', data.role.roleName);
             localStorage.setItem('username', data.username);
+             localStorage.setItem('authToken', encodedToken);
+
             window.location.href = 'dashboard.html';
         })
         .catch(error => document.getElementById('loginMsg').innerText = error.message);
@@ -186,6 +190,8 @@
         localStorage.setItem('userId', '');
         localStorage.setItem('roleName', 'GUEST');
         localStorage.setItem('username', 'Guest Visitor');
+        localStorage.setItem('authToken', '');
+
         window.location.href = 'dashboard.html';
     }
 </script>
