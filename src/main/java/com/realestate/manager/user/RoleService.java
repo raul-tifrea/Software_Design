@@ -1,8 +1,6 @@
-package com.realestate.manager.service;
+package com.realestate.manager.user;
 
 
-import com.realestate.manager.model.entity.Role;
-import com.realestate.manager.repository.RoleRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package com.realestate.manager.model.entity;
+package com.realestate.manager.user;
 
 import jakarta.persistence.*;
 

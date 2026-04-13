@@ -1,6 +1,5 @@
-package com.realestate.manager.repository;
+package com.realestate.manager.property;
 
-import com.realestate.manager.model.entity.Property;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

@@ -1,8 +1,5 @@
-package com.realestate.manager.controller;
+package com.realestate.manager.user;
 
-import com.realestate.manager.model.entity.User;
-import com.realestate.manager.service.UserService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

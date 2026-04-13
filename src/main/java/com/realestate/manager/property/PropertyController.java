@@ -1,9 +1,6 @@
-package com.realestate.manager.controller;
+package com.realestate.manager.property;
 
 
-import com.realestate.manager.model.entity.Property;
-import com.realestate.manager.service.PropertyService;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

@@ -1,6 +1,5 @@
-package com.realestate.manager.repository;
+package com.realestate.manager.user;
 
-import com.realestate.manager.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

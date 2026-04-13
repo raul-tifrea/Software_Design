@@ -1,25 +1,24 @@
-package com.realestate.manager.service;
+package com.realestate.manager.property;
 
 
-import com.realestate.manager.model.entity.Property;
-import com.realestate.manager.model.entity.User;
-import com.realestate.manager.repository.PropertyRepository;
-import com.realestate.manager.repository.RoleRepository;
-import com.realestate.manager.repository.UserRepository;
+import com.realestate.manager.event.EventBroker;
+import com.realestate.manager.user.User;
+import com.realestate.manager.user.UserRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class PropertyService {
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
+    private final EventBroker eventBroker;
 
-    public PropertyService(PropertyRepository propertyRepository, UserRepository userRepository) {
+    public PropertyService(PropertyRepository propertyRepository, UserRepository userRepository, EventBroker eventBroker) {
          this.propertyRepository = propertyRepository;
          this.userRepository = userRepository;
+         this.eventBroker = eventBroker;
     }
 
 
@@ -32,7 +31,12 @@ public class PropertyService {
         }
 
         property.setSellerId(sellerId);
-        return propertyRepository.save(property);
+        Property savedProperty = propertyRepository.save(property);
+
+        String eventData = "User " + seller.getUsername() + " ID " + sellerId + " added property " + savedProperty.getTitle();
+        eventBroker.publish("Property_Created", eventData);
+
+        return savedProperty;
 
     }
 
@@ -41,7 +45,7 @@ public class PropertyService {
         Property oldProperty = propertyRepository.findById(propertyId).orElseThrow(() -> new RuntimeException("Property not found"));
         String rolename = seller.getRole().getRoleName();
 
-        if(rolename.equals("SELLER") && !oldProperty.getSellerId().equals(sellerId)) {
+        if(rolename.equals("SELLER_BUYER") && !oldProperty.getSellerId().equals(sellerId)) {
             throw new RuntimeException("Can only edit own property");
         }else if(!rolename.equals("ADMIN") && !rolename.equals("SELLER_BUYER")) {
             throw new RuntimeException("Invalid role");
@@ -51,7 +55,13 @@ public class PropertyService {
         oldProperty.setPrice(property.getPrice());
         oldProperty.setLocation(property.getLocation());
         oldProperty.setImageUrl(property.getImageUrl());
-        return propertyRepository.save(oldProperty);
+
+        Property updatedProperty = propertyRepository.save(oldProperty);
+
+        String eventData = "User " + seller.getUsername() + " ID " + sellerId + " updated property " + updatedProperty.getTitle();
+        eventBroker.publish("Property_Updated", eventData);
+
+        return updatedProperty;
 
 
     }
@@ -68,6 +78,9 @@ public class PropertyService {
         }
 
         propertyRepository.delete(oldProperty);
+
+        String eventData = "User " + seller.getUsername() + " ID " + sellerId + " deleted property " + oldProperty.getTitle();
+        eventBroker.publish("Property_Deleted", eventData);
     }
 
 

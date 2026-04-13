@@ -1,7 +1,5 @@
-package com.realestate.manager.security;
+package com.realestate.manager.user;
 
-import com.realestate.manager.model.entity.User;
-import com.realestate.manager.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

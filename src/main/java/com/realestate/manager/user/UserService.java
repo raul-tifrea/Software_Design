@@ -1,16 +1,10 @@
-package com.realestate.manager.service;
+package com.realestate.manager.user;
 
 
-import com.realestate.manager.model.entity.Role;
-import com.realestate.manager.model.entity.User;
-import com.realestate.manager.repository.RoleRepository;
-import com.realestate.manager.repository.UserRepository;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
