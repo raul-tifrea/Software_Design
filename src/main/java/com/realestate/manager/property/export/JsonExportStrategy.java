@@ -9,15 +9,27 @@ import java.util.List;
 
 @Component("jsonStrategy")
 public class JsonExportStrategy implements PropertyExportStrategy {
-    private final ObjectMapper mapper = new ObjectMapper();
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ExportArchiveRepo archiveRepository;
+
+    public JsonExportStrategy(ExportArchiveRepo archiveRepository) {
+        this.archiveRepository = archiveRepository;
+    }
 
     @Override
     public String export(List<Property> properties) {
-        try{
-            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(properties);
+        try {
 
-        }catch(Exception e){
-            throw new RuntimeException(e);
+            ExportArchive archive = new ExportArchive(properties);
+            archiveRepository.save(archive);
+            System.out.println("[MongoDB] Successfully saved JSON export archive!");
+
+
+            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(properties);
+
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error formatting JSON", e);
         }
     }
 }
