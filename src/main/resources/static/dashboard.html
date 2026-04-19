@@ -69,6 +69,13 @@
 
     <button style="background-color: #28a745;" onclick="loadProperties()">Apply Filters</button>
     <button style="background-color: #6c757d;" onclick="resetFilters()">Clear</button>
+
+    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+        <strong>Export Data: </strong>
+        <button style="background-color: #17a2b8;" onclick="downloadExport('csv')">⬇ CSV</button>
+        <button style="background-color: #fd7e14;" onclick="downloadExport('json')">⬇ JSON</button>
+        <button style="background-color: #6f42c1;" onclick="downloadExport('xml')">⬇ XML</button>
+    </div>
 </div>
 
 <div id="propertiesList">
@@ -82,6 +89,7 @@
     const currentUsername = localStorage.getItem('username') || 'Guest';
     const authToken = localStorage.getItem('authToken');
     document.getElementById('displayUser').innerText = currentUsername;
+
     if (currentRole === 'GUEST') {
         document.getElementById('logoutBtn').innerText = "Sign In / Register";
     }
@@ -222,10 +230,42 @@
         loadProperties();
     }
 
+    // NEW: Download Export Function
+    function downloadExport(format) {
+        const searchType = document.getElementById('searchType').value;
+        const keyword = document.getElementById('keyword').value;
+        const sortBy = document.getElementById('sortBy').value;
+        const sortDir = document.getElementById('sortDir').value;
+
+        const url = `${API_BASE}/export?format=${format}&searchType=${searchType}&keyword=${keyword}&sortBy=${sortBy}&sortDir=${sortDir}`;
+
+        fetch(url, {
+            method: 'GET',
+            headers: { 'Authorization': 'Basic ' + authToken }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Export failed! Make sure the backend code is running.");
+            return res.blob();
+        })
+        .then(blob => {
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `properties.${format}`;
+            document.body.appendChild(a);
+            a.click();
+
+            a.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+        })
+        .catch(err => alert(err.message));
+    }
+
     function logout() {
         localStorage.clear();
         window.location.href = 'auth.html';
     }
+
     loadProperties();
 </script>
 </body>

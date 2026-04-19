@@ -1,10 +1,13 @@
 package com.realestate.manager.property;
 
 
+import com.realestate.manager.property.export.PropertyExportStrategy;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/properties")
@@ -12,8 +15,23 @@ import java.util.List;
 public class PropertyController {
 
     private final PropertyService propertyService;
-    public PropertyController(PropertyService propertyService) {
+    private final Map<String, PropertyExportStrategy> exportStrategies;
+    public PropertyController(PropertyService propertyService,  Map<String, PropertyExportStrategy> exportStrategies) {
         this.propertyService = propertyService;
+        this.exportStrategies = exportStrategies;
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportProperties(@RequestParam String format, @RequestParam(required = false) String searchType, @RequestParam(required = false) String searchName, @RequestParam(required = false) String keyWord, @RequestParam(defaultValue = "id") String sortBy, @RequestParam(defaultValue = "asc") String sortDir) {
+        List<Property> properties = propertyService.getAllProperties(searchType, keyWord, sortBy, sortDir);
+        PropertyExportStrategy propertyExportStrategy = exportStrategies.get(format.toLowerCase() + "Strategy");
+        if(propertyExportStrategy == null){
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        String data = propertyExportStrategy.export(properties);
+
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=properties." + format).header(HttpHeaders.CONTENT_TYPE, "application/octet-stream").body(data.getBytes());
     }
 
     @GetMapping

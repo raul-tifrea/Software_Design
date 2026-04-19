@@ -1,26 +1,27 @@
 package com.realestate.manager.property;
 
-
-import com.realestate.manager.event.EventBroker;
+import com.realestate.manager.event.RabbitMQConfig;
 import com.realestate.manager.user.User;
 import com.realestate.manager.user.UserRepository;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
 public class PropertyService {
     private final PropertyRepository propertyRepository;
     private final UserRepository userRepository;
-    private final EventBroker eventBroker;
+    private final RabbitTemplate rabbitTemplate;
 
-    public PropertyService(PropertyRepository propertyRepository, UserRepository userRepository, EventBroker eventBroker) {
-         this.propertyRepository = propertyRepository;
-         this.userRepository = userRepository;
-         this.eventBroker = eventBroker;
+    public PropertyService(PropertyRepository propertyRepository, UserRepository userRepository, RabbitTemplate rabbitTemplate) {
+        this.propertyRepository = propertyRepository;
+        this.userRepository = userRepository;
+        this.rabbitTemplate = rabbitTemplate;
     }
-
 
     public Property saveProperty(Property property, Integer sellerId) {
         User seller = userRepository.findById(sellerId).orElseThrow(() -> new RuntimeException("User not found"));
@@ -33,11 +34,16 @@ public class PropertyService {
         property.setSellerId(sellerId);
         Property savedProperty = propertyRepository.save(property);
 
-        String eventData = "User " + seller.getUsername() + " ID " + sellerId + " added property " + savedProperty.getTitle();
-        eventBroker.publish("Property_Created", eventData);
+
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String emailBody = "Event: User " + seller.getUsername() + " added property " + savedProperty.getTitle() + "\n" +
+                "Type: CREATED\n" +
+                "Occured At: " + time;
+
+        String eventData = seller.getEmail() + "|" + emailBody;
+        rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_NAME, eventData);
 
         return savedProperty;
-
     }
 
     public Property updateProperty(Property property, Integer sellerId, Integer propertyId) {
@@ -58,15 +64,19 @@ public class PropertyService {
 
         Property updatedProperty = propertyRepository.save(oldProperty);
 
-        String eventData = "User " + seller.getUsername() + " ID " + sellerId + " updated property " + updatedProperty.getTitle();
-        eventBroker.publish("Property_Updated", eventData);
+
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String emailBody = "Event: User " + seller.getUsername() + " updated property " + updatedProperty.getTitle() + "\n" +
+                "Type: UPDATED\n" +
+                "Occured At: " + time;
+
+        String eventData = seller.getEmail() + "|" + emailBody;
+        rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_NAME, eventData);
 
         return updatedProperty;
-
-
     }
 
-    public void  deleteProperty(Integer propertyId, Integer sellerId) {
+    public void deleteProperty(Integer propertyId, Integer sellerId) {
         User seller = userRepository.findById(sellerId).orElseThrow(() -> new RuntimeException("User not found"));
         Property oldProperty = propertyRepository.findById(propertyId).orElseThrow(() -> new RuntimeException("Property not found"));
         String rolename = seller.getRole().getRoleName();
@@ -79,10 +89,15 @@ public class PropertyService {
 
         propertyRepository.delete(oldProperty);
 
-        String eventData = "User " + seller.getUsername() + " ID " + sellerId + " deleted property " + oldProperty.getTitle();
-        eventBroker.publish("Property_Deleted", eventData);
-    }
 
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String emailBody = "Event: User " + seller.getUsername() + " deleted property " + oldProperty.getTitle() + "\n" +
+                "Type: DELETED\n" +
+                "Occured At: " + time;
+
+        String eventData = seller.getEmail() + "|" + emailBody;
+        rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_NAME, eventData);
+    }
 
     public List<Property> getAllProperties(String searchType, String keyword, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
@@ -96,5 +111,4 @@ public class PropertyService {
             return propertyRepository.findByLocationContainingIgnoreCase(keyword, sort);
         }
     }
-
 }
