@@ -36,11 +36,8 @@ public class PropertyService {
 
 
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        String emailBody = "Event: User " + seller.getUsername() + " added property " + savedProperty.getTitle() + "\n" +
-                "Type: CREATED\n" +
-                "Occured At: " + time;
-
-        String eventData = seller.getEmail() + "|" + emailBody;
+        String emailBody = "Event: User " + seller.getUsername() + " added property " + savedProperty.getTitle() + "\n" + "Type: CREATED\n" + "Occured At: " + time;
+        String eventData = seller.getEmail() + emailBody;
         rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_NAME, eventData);
 
         return savedProperty;
@@ -66,11 +63,8 @@ public class PropertyService {
 
 
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        String emailBody = "Event: User " + seller.getUsername() + " updated property " + updatedProperty.getTitle() + "\n" +
-                "Type: UPDATED\n" +
-                "Occured At: " + time;
-
-        String eventData = seller.getEmail() + "|" + emailBody;
+        String emailBody = "Event: User " + seller.getUsername() + " updated property " + updatedProperty.getTitle() + "\n" + "Type: UPDATED\n" + "Occured At: " + time;
+        String eventData = seller.getEmail() + emailBody;
         rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_NAME, eventData);
 
         return updatedProperty;
@@ -91,9 +85,7 @@ public class PropertyService {
 
 
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        String emailBody = "Event: User " + seller.getUsername() + " deleted property " + oldProperty.getTitle() + "\n" +
-                "Type: DELETED\n" +
-                "Occured At: " + time;
+        String emailBody = "Event: User " + seller.getUsername() + " deleted property " + oldProperty.getTitle() + "\n" + "Type: DELETED\n" + "Occured At: " + time;
 
         String eventData = seller.getEmail() + "|" + emailBody;
         rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_NAME, eventData);

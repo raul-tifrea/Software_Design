@@ -23,7 +23,7 @@ public class NotificationService {
 
 
             if (parts.length < 2) {
-                System.out.println("[ERROR] Invalid message format received: " + message);
+                System.out.println("Invalid message format received: " + message);
                 return;
             }
 
@@ -33,16 +33,16 @@ public class NotificationService {
 
             SimpleMailMessage mail = new SimpleMailMessage();
             mail.setTo(userEmail);
-            mail.setSubject("Real Estate Hub - Activity Alert");
+            mail.setSubject("Real Estate Manager - Activity Alert");
             mail.setText(emailBody);
 
 
             mailSender.send(mail);
 
-            System.out.println("[SUCCESS] Real email delivered to: " + userEmail);
+            System.out.println("Email delivered to: " + userEmail);
 
         } catch (Exception e) {
-            System.out.println("[ERROR] Could not send email: " + e.getMessage());
+            System.out.println("Could not send email: " + e.getMessage());
         }
     }
 }
