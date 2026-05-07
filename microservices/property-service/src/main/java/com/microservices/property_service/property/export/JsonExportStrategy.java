@@ -1,6 +1,5 @@
 package com.microservices.property_service.property.export;
 
-
 import com.microservices.property_service.property.Property;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
@@ -8,28 +7,22 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 
 @Component("jsonStrategy")
-public class JsonExportStrategy implements PropertyExportStrategy {
+public class JsonExportStrategy extends BasePropertyExporter implements PropertyExportStrategy {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private final ExportArchiveRepo archiveRepository;
-
-    public JsonExportStrategy(ExportArchiveRepo archiveRepository) {
-        this.archiveRepository = archiveRepository;
+    @Override
+    protected String writeOutput(List<Property> formattedData) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            // Convert to a JSON String instead of bytes
+            return mapper.writeValueAsString(formattedData);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to export JSON", e);
+        }
     }
 
     @Override
     public String export(List<Property> properties) {
-        try {
-
-            ExportArchive archive = new ExportArchive(properties);
-            archiveRepository.save(archive);
-            System.out.println("[MongoDB] Successfully saved JSON export archive!");
-
-
-            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(properties);
-
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Error formatting JSON", e);
-        }
+        // Trigger the template method
+        return super.executeExport(properties);
     }
 }

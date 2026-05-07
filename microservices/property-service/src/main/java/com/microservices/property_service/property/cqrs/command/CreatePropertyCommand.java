@@ -17,7 +17,6 @@ public class CreatePropertyCommand implements Command<Property> {
     @Override
     public Property execute() {
         property.setSellerId(sellerId);
-
         return repository.save(property);
     }
 }

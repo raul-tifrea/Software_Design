@@ -3,7 +3,8 @@ package com.microservices.property_service.property.cqrs.command;
 import com.microservices.property_service.property.Property;
 import com.microservices.property_service.property.PropertyRepository;
 
-public class DeletePropertyCommand implements Command<Void> {
+// 1. Change Command<Void> to Command<Property>
+public class DeletePropertyCommand implements Command<Property> {
     private final Integer propertyId;
     private final Integer sellerId;
     private final PropertyRepository repository;
@@ -15,7 +16,8 @@ public class DeletePropertyCommand implements Command<Void> {
     }
 
     @Override
-    public Void execute() {
+    // 2. Change Void to Property
+    public Property execute() {
         Property existingProperty = repository.findById(propertyId)
                 .orElseThrow(() -> new RuntimeException("Property not found"));
 
@@ -24,6 +26,8 @@ public class DeletePropertyCommand implements Command<Void> {
         }
 
         repository.delete(existingProperty);
-        return null;
+
+        // 3. Return the property we just deleted instead of null!
+        return existingProperty;
     }
 }

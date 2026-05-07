@@ -76,4 +76,15 @@ public class PropertyController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/{propertyId}")
+    public ResponseEntity<?> getPropertyById(@PathVariable Integer propertyId) {
+        try {
+            // Make sure getPropertyById exists in your PropertyQueryService!
+            Property property = propertyQueryService.getPropertyById(propertyId);
+            return ResponseEntity.ok(property);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

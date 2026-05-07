@@ -1,6 +1,6 @@
 package com.microservices.notification_service.notification;
 
-import com.realestate.manager.event.RabbitMQConfig;
+import com.microservices.notification_service.event.RabbitMQConfig;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;

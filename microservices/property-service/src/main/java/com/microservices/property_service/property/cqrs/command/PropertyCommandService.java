@@ -6,7 +6,7 @@ import com.microservices.property_service.property.UserDto;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
+import org.springframework.beans.factory.annotation.Value;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -17,8 +17,9 @@ public class PropertyCommandService {
     private final RestTemplate restTemplate;
     private final RabbitTemplate rabbitTemplate;
 
+    @Value("${rabbitmq.notification.queue}")
+    private String queueName;
 
-    private static final String QUEUE_NAME = "myQueue";
 
     public PropertyCommandService(PropertyRepository repository, RestTemplate restTemplate, RabbitTemplate rabbitTemplate) {
         this.repository = repository;
@@ -41,7 +42,7 @@ public class PropertyCommandService {
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String emailBody = "Event: User " + user.getUsername() + " " + action + " property " + propertyTitle + "\n" + "Occured At: " + time;
         String eventData = user.getEmail() + "|" + emailBody;
-        rabbitTemplate.convertAndSend(QUEUE_NAME, eventData);
+        rabbitTemplate.convertAndSend(queueName, eventData);
     }
 
     public Property createProperty(Property property, Integer sellerId) {
@@ -67,11 +68,15 @@ public class PropertyCommandService {
     public void deleteProperty(Integer propertyId, Integer sellerId) {
         UserDto user = fetchAndValidateUser(sellerId);
 
-        Property oldProperty = repository.findById(propertyId).orElseThrow();
+        // We removed the oldProperty findById() query!
 
-        Command<Void> command = new DeletePropertyCommand(propertyId, sellerId, repository);
-        command.execute();
+        // Change Command<Void> to Command<Property>
+        Command<Property> command = new DeletePropertyCommand(propertyId, sellerId, repository);
 
-        sendRabbitMQEvent(user, "DELETED", oldProperty.getTitle());
+        // The command executes and hands us back the deleted data
+        Property deletedProperty = command.execute();
+
+        // We can safely grab the title from the returned object
+        sendRabbitMQEvent(user, "DELETED", deletedProperty.getTitle());
     }
 }
