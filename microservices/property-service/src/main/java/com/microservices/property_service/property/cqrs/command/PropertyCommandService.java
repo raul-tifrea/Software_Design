@@ -20,17 +20,23 @@ public class PropertyCommandService {
     @Value("${rabbitmq.notification.queue}")
     private String queueName;
 
+    @Value("${user.service.url}")
+    private String userServiceUrl;
 
-    public PropertyCommandService(PropertyRepository repository, RestTemplate restTemplate, RabbitTemplate rabbitTemplate) {
+    public PropertyCommandService(PropertyRepository repository, RestTemplate restTemplate,
+            RabbitTemplate rabbitTemplate) {
         this.repository = repository;
         this.restTemplate = restTemplate;
         this.rabbitTemplate = rabbitTemplate;
     }
 
     private UserDto fetchAndValidateUser(Integer sellerId) {
-        // HTTP Call to the user-service!
-        UserDto user = restTemplate.getForObject("http://localhost:8082/api/users/" + sellerId, UserDto.class);
-        if (user == null) throw new RuntimeException("User not found");
+
+        UserDto user = restTemplate.getForObject(userServiceUrl + "/api/users/" + sellerId, UserDto.class);
+        if (user == null)
+            throw new RuntimeException("User not found");
+
+        user.setId(sellerId);
 
         if (!user.getRoleName().equals("ADMIN") && !user.getRoleName().equals("SELLER_BUYER")) {
             throw new RuntimeException("Invalid role");
@@ -40,7 +46,8 @@ public class PropertyCommandService {
 
     private void sendRabbitMQEvent(UserDto user, String action, String propertyTitle) {
         String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        String emailBody = "Event: User " + user.getUsername() + " " + action + " property " + propertyTitle + "\n" + "Occured At: " + time;
+        String emailBody = "Event: User " + user.getUsername() + " " + action + " property " + propertyTitle + "\n"
+                + "Occured At: " + time;
         String eventData = user.getEmail() + "|" + emailBody;
         rabbitTemplate.convertAndSend(queueName, eventData);
     }
@@ -58,7 +65,7 @@ public class PropertyCommandService {
     public Property updateProperty(Integer propertyId, Property property, Integer sellerId) {
         UserDto user = fetchAndValidateUser(sellerId);
 
-        Command<Property> command = new UpdatePropertyCommand(propertyId, property, sellerId, repository);
+        Command<Property> command = new UpdatePropertyCommand(propertyId, property, user, repository);
         Property updatedProperty = command.execute();
 
         sendRabbitMQEvent(user, "UPDATED", updatedProperty.getTitle());
@@ -68,15 +75,9 @@ public class PropertyCommandService {
     public void deleteProperty(Integer propertyId, Integer sellerId) {
         UserDto user = fetchAndValidateUser(sellerId);
 
-        // We removed the oldProperty findById() query!
+        Command<Property> command = new DeletePropertyCommand(propertyId, user, repository);
 
-        // Change Command<Void> to Command<Property>
-        Command<Property> command = new DeletePropertyCommand(propertyId, sellerId, repository);
-
-        // The command executes and hands us back the deleted data
         Property deletedProperty = command.execute();
-
-        // We can safely grab the title from the returned object
         sendRabbitMQEvent(user, "DELETED", deletedProperty.getTitle());
     }
 }

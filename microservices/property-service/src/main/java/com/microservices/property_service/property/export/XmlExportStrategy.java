@@ -7,14 +7,15 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component("xmlStrategy")
-public class XmlExportStrategy implements PropertyExportStrategy{
+public class XmlExportStrategy extends BasePropertyExporter implements PropertyExportStrategy {
+
     @Override
-    public String export(List<Property> properties) {
+    protected String writeOutput(List<Property> formattedData) {
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<properties>\n");
 
-        for (Property p : properties) {
+        for (Property p : formattedData) {
             xml.append("  <property>\n")
                     .append("    <id>").append(p.getId()).append("</id>\n")
                     .append("    <title>").append(p.getTitle()).append("</title>\n")
@@ -25,5 +26,11 @@ public class XmlExportStrategy implements PropertyExportStrategy{
         }
         xml.append("</properties>");
         return xml.toString();
+    }
+
+    @Override
+    public String export(List<Property> properties) {
+        // Trigger the template method
+        return super.executeExport(properties);
     }
 }

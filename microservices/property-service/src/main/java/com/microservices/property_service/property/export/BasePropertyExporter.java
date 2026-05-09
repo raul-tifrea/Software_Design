@@ -5,7 +5,6 @@ import java.util.List;
 
 public abstract class BasePropertyExporter {
 
-    // The Template Method now returns a String
     public final String executeExport(List<Property> properties) {
         List<Property> formattedData = transformData(properties);
         return writeOutput(formattedData);
@@ -15,6 +14,5 @@ public abstract class BasePropertyExporter {
         return properties;
     }
 
-    // The subclass must return a String
     protected abstract String writeOutput(List<Property> formattedData);
 }

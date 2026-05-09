@@ -3,31 +3,31 @@ package com.microservices.property_service.property.cqrs.command;
 import com.microservices.property_service.property.Property;
 import com.microservices.property_service.property.PropertyRepository;
 
-// 1. Change Command<Void> to Command<Property>
+import com.microservices.property_service.property.UserDto;
+
 public class DeletePropertyCommand implements Command<Property> {
     private final Integer propertyId;
-    private final Integer sellerId;
+    private final UserDto user;
     private final PropertyRepository repository;
 
-    public DeletePropertyCommand(Integer propertyId, Integer sellerId, PropertyRepository repository) {
+    public DeletePropertyCommand(Integer propertyId, UserDto user, PropertyRepository repository) {
         this.propertyId = propertyId;
-        this.sellerId = sellerId;
+        this.user = user;
         this.repository = repository;
     }
 
     @Override
-    // 2. Change Void to Property
     public Property execute() {
         Property existingProperty = repository.findById(propertyId)
                 .orElseThrow(() -> new RuntimeException("Property not found"));
 
-        if (!existingProperty.getSellerId().equals(sellerId)) {
+        boolean isAdmin = "ADMIN".equals(user.getRoleName());
+        if (!isAdmin && !existingProperty.getSellerId().equals(user.getId())) {
             throw new RuntimeException("Not authorized to delete this property");
         }
 
         repository.delete(existingProperty);
 
-        // 3. Return the property we just deleted instead of null!
         return existingProperty;
     }
 }

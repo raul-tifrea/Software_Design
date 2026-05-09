@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Real Estate Hub — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f5;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        nav {
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-user {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .nav-role {
+            font-size: 0.72rem;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            text-transform: uppercase;
+        }
+
+        .role-admin {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
+        }
+
+        .role-seller {
+            background: #d1fae5;
+            color: #047857;
+            border-color: #6ee7b7;
+        }
+
+        .role-guest {
+            background: #f3f4f6;
+            color: #4b5563;
+            border-color: #d1d5db;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            font-size: 0.85rem;
+            background: #fff;
+        }
+
+        .btn-sm:hover {
+            background: #f9f9f9;
+        }
+
+        .btn-logout {
+            background: #fff;
+            color: #333;
+        }
+
+        .btn-admin {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .toolbar {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .toolbar-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toolbar-row+.toolbar-row {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        select,
+        input[type="text"],
+        input[type="number"] {
+            padding: 6px 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            color: #333;
+            font-size: 0.88rem;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            font-size: 0.88rem;
+            background: #fff;
+            color: #333;
+        }
+
+        .btn:hover {
+            background: #f0f0f0;
+        }
+
+        .btn-purple {
+            background: #6d28d9;
+            color: #fff;
+            border-color: #5b21b6;
+        }
+
+        .btn-green {
+            background: #059669;
+            color: #fff;
+            border-color: #047857;
+        }
+
+        .btn-red {
+            background: #dc2626;
+            color: #fff;
+            border-color: #b91c1c;
+        }
+
+        .btn-yellow {
+            background: #f59e0b;
+            color: #fff;
+            border-color: #d97706;
+        }
+
+        .toolbar-label {
+            font-size: 0.85rem;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .add-panel {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .add-panel h3 {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 10px;
+        }
+
+        .add-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .add-form input {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 15px;
+        }
+
+        .property-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .property-img {
+            width: 150px;
+            min-height: 120px;
+            object-fit: cover;
+            flex-shrink: 0;
+            border-right: 1px solid #ddd;
+        }
+
+        .property-body {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .property-info h3 {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 5px;
+        }
+
+        .property-info p {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .property-info .location {
+            color: #000;
+            font-weight: bold;
+        }
+
+        .property-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .price-tag {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #059669;
+        }
+
+        .price-tag::before {
+            content: '$';
+            font-size: 0.9rem;
+            font-weight: normal;
+            vertical-align: top;
+        }
+
+        .action-btns {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+            justify-content: flex-end;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            font-size: 0.95rem;
+            border: 1px dashed #ccc;
+            background: #fff;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="nav-brand">Real Estate Hub</div>
+        <div class="nav-right">
+            <span class="nav-user">Logged in as <strong id="displayUser"></strong></span>
+            <span class="nav-role" id="roleTag"></span>
+            <button id="adminNavBtn" class="btn-sm btn-admin hidden"
+                onclick="window.location.href='manage-users.html'">Manage Users</button>
+            <button class="btn-sm btn-logout" onclick="logout()">Sign Out</button>
+        </div>
+    </nav>
+
+    <main>
+
+        <div class="add-panel hidden" id="addPropertySection">
+            <h3>+ List a New Property</h3>
+            <div class="add-form">
+                <input type="text" id="newTitle" placeholder="Title (e.g. Cozy Cabin)">
+                <input type="text" id="newLocation" placeholder="Location">
+                <input type="number" id="newPrice" placeholder="Price ($)" min="0">
+                <input type="text" id="newDesc" placeholder="Description">
+                <input type="text" id="newImage" placeholder="Photo URL (optional)">
+                <button class="btn btn-green" onclick="createProperty()">Post Listing</button>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="toolbar-row">
+                <span class="toolbar-label">Search:</span>
+                <select id="searchType">
+                    <option value="location">By Location</option>
+                    <option value="title">By Title</option>
+                </select>
+                <input type="text" id="keyword" placeholder="Search term…" style="min-width:180px;">
+
+                <span class="toolbar-label" style="margin-left:8px;">Sort:</span>
+                <select id="sortBy">
+                    <option value="price">Price</option>
+                    <option value="title">Title</option>
+                    <option value="location">Location</option>
+                </select>
+                <select id="sortDir">
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                </select>
+
+                <button class="btn btn-purple" onclick="loadProperties()">Apply</button>
+                <button class="btn btn-gray" onclick="resetFilters()">Clear</button>
+            </div>
+
+            <div class="toolbar-row">
+                <span class="toolbar-label">Export:</span>
+                <button class="btn btn-teal" onclick="downloadExport('csv')">CSV</button>
+                <button class="btn btn-orange" onclick="downloadExport('json')">JSON</button>
+                <button class="btn btn-violet" onclick="downloadExport('xml')">XML</button>
+            </div>
+        </div>
+
+        <div class="section-title">Available Properties</div>
+        <div id="propertiesList"></div>
+
+    </main>
+
+    <script>
+        const PROPERTY_API = 'http://localhost:8081/api/properties';
+
+        const currentUserId = localStorage.getItem('userId');
+        const currentRole = localStorage.getItem('roleName') || 'GUEST';
+        const currentUsername = localStorage.getItem('username') || 'Guest';
+        const authToken = localStorage.getItem('authToken');
+
+        document.getElementById('displayUser').innerText = currentUsername;
+        const roleTag = document.getElementById('roleTag');
+        if (currentRole === 'ADMIN') {
+            roleTag.textContent = 'Admin';
+            roleTag.classList.add('role-admin');
+            document.getElementById('adminNavBtn').classList.remove('hidden');
+            document.getElementById('addPropertySection').classList.remove('hidden');
+        } else if (currentRole === 'SELLER_BUYER') {
+            roleTag.textContent = 'Seller / Buyer';
+            roleTag.classList.add('role-seller');
+            document.getElementById('addPropertySection').classList.remove('hidden');
+        } else {
+            roleTag.textContent = 'Guest';
+            roleTag.classList.add('role-guest');
+            document.querySelector('.btn-logout').textContent = 'Sign In';
+        }
+
+        function loadProperties() {
+            const searchType = document.getElementById('searchType').value;
+            const keyword = document.getElementById('keyword').value;
+            const sortBy = document.getElementById('sortBy').value;
+            const sortDir = document.getElementById('sortDir').value;
+
+            const url = `${PROPERTY_API}?searchType=${searchType}&keyWord=${encodeURIComponent(keyword)}&sortBy=${sortBy}&sortDir=${sortDir}`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(properties => {
+                    const list = document.getElementById('propertiesList');
+                    list.innerHTML = '';
+
+                    if (!properties.length) {
+                        list.innerHTML = '<div class="empty-state">No properties found matching your criteria.</div>';
+                        return;
+                    }
+
+                    properties.forEach(prop => {
+                        const isOwner = prop.sellerId === parseInt(currentUserId);
+                        const canEdit = currentRole === 'ADMIN' || (currentRole === 'SELLER_BUYER' && isOwner);
+
+                        const actionButtons = canEdit ? `
+                    <button class="btn btn-yellow" onclick="editProperty(${prop.id},'${esc(prop.title)}','${esc(prop.location)}',${prop.price},'${esc(prop.description || '')}','${esc(prop.imageUrl || '')}')">Edit</button>
+                    <button class="btn btn-red"    onclick="deleteProperty(${prop.id})">Delete</button>
+                ` : '';
+
+                        list.innerHTML += `
+                    <div class="property-card">
+                        <img class="property-img" src="${prop.imageUrl || 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=300&q=80'}" alt="${esc(prop.title)}" onerror="this.src='https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=300&q=80'">
+                        <div class="property-body">
+                            <div class="property-info">
+                                <h3>${prop.title}</h3>
+                                <p class="location">${prop.location}</p>
+                                <p>${prop.description || ''}</p>
+                            </div>
+                            <div class="property-right">
+                                <div class="price-tag">${prop.price.toLocaleString()}</div>
+                                <div class="action-btns">${actionButtons}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                    });
+                })
+                .catch(() => {
+                    document.getElementById('propertiesList').innerHTML =
+                        '<div class="empty-state">Could not reach the property service. Is it running on port 8081?</div>';
+                });
+        }
+
+        function createProperty() {
+            const newProp = {
+                title: document.getElementById('newTitle').value,
+                location: document.getElementById('newLocation').value,
+                price: parseFloat(document.getElementById('newPrice').value),
+                description: document.getElementById('newDesc').value,
+                imageUrl: document.getElementById('newImage').value
+            };
+
+            fetch(`${PROPERTY_API}?sellerId=${currentUserId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + authToken },
+                body: JSON.stringify(newProp)
+            })
+                .then(res => {
+                    if (!res.ok) return res.text().then(t => { throw new Error(t); });
+                    ['newTitle', 'newLocation', 'newPrice', 'newDesc', 'newImage'].forEach(id => document.getElementById(id).value = '');
+                    loadProperties();
+                })
+                .catch(err => alert('Error: ' + err.message));
+        }
+
+        function editProperty(id, oldTitle, oldLoc, oldPrice, oldDesc, oldImage) {
+            const newTitle = prompt("Title:", oldTitle); if (!newTitle) return;
+            const newLoc = prompt("Location:", oldLoc); if (!newLoc) return;
+            const newPrice = prompt("Price:", oldPrice); if (!newPrice) return;
+            const newDesc = prompt("Description:", oldDesc);
+            const newImage = prompt("Image URL:", oldImage);
+
+            fetch(`${PROPERTY_API}/${id}?sellerId=${currentUserId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + authToken },
+                body: JSON.stringify({ title: newTitle, location: newLoc, price: parseFloat(newPrice), description: newDesc, imageUrl: newImage })
+            })
+                .then(res => { if (!res.ok) alert("Error updating property."); loadProperties(); });
+        }
+
+        function deleteProperty(id) {
+            if (!confirm("Delete this listing?")) return;
+            fetch(`${PROPERTY_API}/${id}?sellerId=${currentUserId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Basic ' + authToken }
+            })
+                .then(res => { if (!res.ok) alert("Error deleting property."); loadProperties(); });
+        }
+
+        function resetFilters() {
+            document.getElementById('keyword').value = '';
+            loadProperties();
+        }
+
+        function downloadExport(format) {
+            const searchType = document.getElementById('searchType').value;
+            const keyword = document.getElementById('keyword').value;
+            const sortBy = document.getElementById('sortBy').value;
+            const sortDir = document.getElementById('sortDir').value;
+
+            fetch(`${PROPERTY_API}/export?format=${format}&searchType=${searchType}&keyWord=${encodeURIComponent(keyword)}&sortBy=${sortBy}&sortDir=${sortDir}`, {
+                headers: { 'Authorization': 'Basic ' + authToken }
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error("Export failed — is the property service running?");
+                    return res.blob();
+                })
+                .then(blob => {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `properties.${format}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                })
+                .catch(err => alert(err.message));
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'auth.html';
+        }
+
+        function esc(str) { return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+        loadProperties();
+    </script>
+</body>
+
+</html>

@@ -37,10 +37,23 @@ public class UserController {
         }
     }
 
-
-
-
-
+    @GetMapping("/debug")
+    public ResponseEntity<?> debugUser(@RequestParam String username, @RequestParam String rawPassword) {
+        try {
+            User user = userService.authenticate(username, rawPassword);
+            return ResponseEntity.ok("Valid! User: " + user.getUsername() + ", Hash: " + user.getPasswordHash());
+        } catch (Exception e) {
+            java.util.Optional<User> opt = userService.getUserByUsername(username);
+            if (opt.isEmpty()) return ResponseEntity.ok("User not found in DB.");
+            User u = opt.get();
+            org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder enc = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+            String hash = u.getPasswordHash();
+            return ResponseEntity.ok("Error was: " + e.getMessage() + "\n" +
+                "DB Hash Length: " + (hash == null ? "null" : hash.length()) + "\n" +
+                "DB Hash: " + hash + "\n" +
+                "Does it match rawPassword? " + enc.matches(rawPassword, hash));
+        }
+    }
 
     @GetMapping
     public ResponseEntity<?> getAllUsers(@RequestParam Integer reqId)

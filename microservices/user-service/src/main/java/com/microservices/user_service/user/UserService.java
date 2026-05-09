@@ -50,8 +50,18 @@ public class UserService {
 
     public User createUser(User user, Integer roleId){
         verifAdmin(roleId);
-        Role role = roleRepository.findById(user.getRole().getId())
-                .orElseThrow(() -> new RuntimeException("Role not found."));
+        Role role;
+        if (user.getRole().getRoleName() != null) {
+            role = roleRepository.findByRoleName(user.getRole().getRoleName())
+                    .orElseThrow(() -> new RuntimeException("Role not found by name: " + user.getRole().getRoleName()));
+        } else if (user.getRole().getId() != null) {
+            Integer fallbackId = user.getRole().getId();
+            if (fallbackId == 3) fallbackId = 2; // Map cached "3" to actual "2" (SELLER_BUYER)
+            role = roleRepository.findById(fallbackId)
+                    .orElseThrow(() -> new RuntimeException("Role not found by ID: " + user.getRole().getId()));
+        } else {
+            throw new RuntimeException("Role information is missing");
+        }
         user.setRole(role);
         user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         return userRepository.save(user);
@@ -71,8 +81,19 @@ public class UserService {
         }
         existingUser.setEmail(updatedUser.getEmail());
 
-        if(updatedUser.getRole() != null && updatedUser.getRole().getId() != null){
-            Role  role = roleRepository.findById(requestId).orElseThrow(() -> new RuntimeException("Role not found."));
+        if(updatedUser.getRole() != null) {
+            Role role;
+            if (updatedUser.getRole().getRoleName() != null) {
+                role = roleRepository.findByRoleName(updatedUser.getRole().getRoleName())
+                        .orElseThrow(() -> new RuntimeException("Role not found by name: " + updatedUser.getRole().getRoleName()));
+            } else if (updatedUser.getRole().getId() != null) {
+                Integer fallbackId = updatedUser.getRole().getId();
+                if (fallbackId == 3) fallbackId = 2;
+                role = roleRepository.findById(fallbackId)
+                        .orElseThrow(() -> new RuntimeException("Role not found by ID: " + updatedUser.getRole().getId()));
+            } else {
+                throw new RuntimeException("Role information is missing");
+            }
             existingUser.setRole(role);
         }
 
@@ -90,4 +111,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    public java.util.Optional<User> getUserByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
 }

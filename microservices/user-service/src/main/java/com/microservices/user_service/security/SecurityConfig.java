@@ -31,7 +31,9 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
 
                         .anyRequest().authenticated()
-                );
+                )
+                .httpBasic(Customizer.withDefaults())
+                .cors(Customizer.withDefaults());
 
 
         return http.build();

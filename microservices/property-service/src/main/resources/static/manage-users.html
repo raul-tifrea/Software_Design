@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Users — Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f5;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        nav {
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+        }
+
+        .nav-brand {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            font-size: 0.85rem;
+            background: #fff;
+        }
+
+        .btn-back {
+            background: #fff;
+            color: #333;
+        }
+
+        .btn-back:hover {
+            background: #f9f9f9;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 5px;
+        }
+
+        .page-sub {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .create-panel {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .create-panel h3 {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 10px;
+        }
+
+        .create-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        input,
+        select {
+            padding: 6px 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            color: #333;
+            font-size: 0.88rem;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            font-size: 0.88rem;
+            background: #fff;
+            color: #333;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: #f0f0f0;
+        }
+
+        .btn-green {
+            background: #059669;
+            color: #fff;
+            border-color: #047857;
+        }
+
+        .btn-red {
+            background: #dc2626;
+            color: #fff;
+            border-color: #b91c1c;
+        }
+
+        .table-panel {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .table-panel-header {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #000;
+            background: #fafafa;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            padding: 10px 15px;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #555;
+            border-bottom: 1px solid #ddd;
+            background: #f9f9f9;
+        }
+
+        td {
+            padding: 10px 15px;
+            font-size: 0.88rem;
+            border-bottom: 1px solid #eee;
+            color: #333;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #fcfcfc;
+        }
+
+        .role-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            text-transform: uppercase;
+        }
+
+        .badge-admin {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
+        }
+
+        .badge-seller {
+            background: #d1fae5;
+            color: #047857;
+            border-color: #6ee7b7;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="nav-brand">Real Estate Hub</div>
+        <button class="btn-sm btn-back" onclick="window.location.href='dashboard.html'">← Dashboard</button>
+    </nav>
+
+    <main>
+        <div class="page-title">User Management</div>
+        <div class="page-sub">Admin panel — create, view and delete user accounts</div>
+
+        <div class="create-panel">
+            <h3>+ Create New User</h3>
+            <div class="create-form">
+                <input type="text" id="newUsername" placeholder="Username" required>
+                <input type="email" id="newEmail" placeholder="Email address" required>
+                <input type="password" id="newPassword" placeholder="Password" required>
+                <select id="newRole">
+                    <option value="SELLER_BUYER">SELLER_BUYER</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+                <button class="btn btn-green" onclick="createUser()">Create User</button>
+            </div>
+        </div>
+
+        <div class="table-panel">
+            <div class="table-panel-header">All Users</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersList"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        const USER_API = 'http://localhost:8082/api/users';
+        const currentUserId = localStorage.getItem('userId');
+        const authToken = localStorage.getItem('authToken');
+
+        if (!authToken) window.location.href = 'auth.html';
+
+        const secHeaders = { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + authToken };
+
+        function loadUsers() {
+            fetch(`${USER_API}?reqId=${currentUserId}`, { headers: { 'Authorization': 'Basic ' + authToken } })
+                .then(res => {
+                    if (!res.ok) throw new Error("Unauthorized");
+                    return res.json();
+                })
+                .then(users => {
+                    const tbody = document.getElementById('usersList');
+                    tbody.innerHTML = '';
+
+                    if (!users.length) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No users found.</td></tr>';
+                        return;
+                    }
+
+                    users.forEach(user => {
+                        const isAdmin = user.role.roleName === 'ADMIN';
+                        const badgeClass = isAdmin ? 'badge-admin' : 'badge-seller';
+                        tbody.innerHTML += `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td><strong>${user.username}</strong></td>
+                        <td>${user.email}</td>
+                        <td><span class="role-badge ${badgeClass}">${user.role.roleName}</span></td>
+                        <td>
+                            <button class="btn btn-red" onclick="deleteUser(${user.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+                    });
+                })
+                .catch(err => {
+                    document.getElementById('usersList').innerHTML =
+                        `<tr><td colspan="5" class="empty-state">${err.message} — make sure you are logged in as ADMIN.</td></tr>`;
+                });
+        }
+
+        function createUser() {
+            const newUser = {
+                username: document.getElementById('newUsername').value.trim(),
+                email: document.getElementById('newEmail').value.trim(),
+                passwordHash: document.getElementById('newPassword').value,
+                role: { roleName: document.getElementById('newRole').value }
+            };
+
+            fetch(`${USER_API}?reqId=${currentUserId}`, {
+                method: 'POST',
+                headers: secHeaders,
+                body: JSON.stringify(newUser)
+            })
+                .then(res => {
+                    if (!res.ok) return res.text().then(t => { throw new Error(t); });
+                    document.getElementById('newUsername').value = '';
+                    document.getElementById('newEmail').value = '';
+                    document.getElementById('newPassword').value = '';
+                    loadUsers();
+                })
+                .catch(err => alert('Error: ' + err.message));
+        }
+
+        function deleteUser(id) {
+            if (!confirm("Permanently delete this user?")) return;
+            fetch(`${USER_API}/${id}?reqId=${currentUserId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Basic ' + authToken }
+            })
+                .then(res => {
+                    if (!res.ok) return res.text().then(t => { throw new Error(t); });
+                    loadUsers();
+                })
+                .catch(err => alert('Error: ' + err.message));
+        }
+
+        loadUsers();
+    </script>
+</body>
+
+</html>

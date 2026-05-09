@@ -13,7 +13,6 @@ public class JsonExportStrategy extends BasePropertyExporter implements Property
     protected String writeOutput(List<Property> formattedData) {
         try {
             ObjectMapper mapper = new ObjectMapper();
-            // Convert to a JSON String instead of bytes
             return mapper.writeValueAsString(formattedData);
         } catch (Exception e) {
             throw new RuntimeException("Failed to export JSON", e);
@@ -22,7 +21,6 @@ public class JsonExportStrategy extends BasePropertyExporter implements Property
 
     @Override
     public String export(List<Property> properties) {
-        // Trigger the template method
         return super.executeExport(properties);
     }
 }
