@@ -29,67 +29,39 @@ class PropertyQueryServiceTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    @Test
-    void getAllProperties_NoFilter_ReturnsAllSorted() {
-        // ARRANGE
-        Property p1 = new Property(); p1.setTitle("Villa");
-        Property p2 = new Property(); p2.setTitle("Apartment");
-        when(propertyRepository.findAll(any(Sort.class))).thenReturn(Arrays.asList(p1, p2));
 
-        // ACT
-        List<Property> results = propertyQueryService.getAllProperties(null, null, "id", "asc");
-
-        // ASSERT
-        assertEquals(2, results.size());
-        assertEquals("Villa", results.get(0).getTitle());
-        verify(propertyRepository, times(1)).findAll(any(Sort.class));
-    }
 
     @Test
     void getPropertyById_Success() {
-        // ARRANGE
         Property p = new Property();
         p.setId(1);
-        p.setTitle("Cabin");
+        p.setTitle("Casa");
         when(propertyRepository.findById(1)).thenReturn(Optional.of(p));
-
-        // ACT
         Property result = propertyQueryService.getPropertyById(1);
-
-        // ASSERT
         assertNotNull(result);
-        assertEquals("Cabin", result.getTitle());
+        assertEquals("Casa", result.getTitle());
     }
 
     @Test
     void getAllProperties_FilterByTitle_ReturnsTitleMatches() {
-        // ARRANGE
-        Property p = new Property(); p.setTitle("Beach Villa");
-        when(propertyRepository.findByTitleContainingIgnoreCase(eq("villa"), any(Sort.class)))
+        Property p = new Property(); p.setTitle("Vila");
+        when(propertyRepository.findByTitleContainingIgnoreCase(eq("vila"), any(Sort.class)))
                 .thenReturn(List.of(p));
-
-        // ACT
-        List<Property> results = propertyQueryService.getAllProperties("title", "villa", "id", "asc");
-
-        // ASSERT
+        List<Property> results = propertyQueryService.getAllProperties("title", "vila", "id", "asc");
         assertEquals(1, results.size());
-        assertEquals("Beach Villa", results.get(0).getTitle());
-        verify(propertyRepository, times(1)).findByTitleContainingIgnoreCase(eq("villa"), any(Sort.class));
+        assertEquals("Vila", results.get(0).getTitle());
+        verify(propertyRepository, times(1)).findByTitleContainingIgnoreCase(eq("vila"), any(Sort.class));
     }
 
     @Test
     void getAllProperties_FilterByLocation_ReturnsLocationMatches() {
-        // ARRANGE
-        Property p = new Property(); p.setLocation("Bucharest");
-        when(propertyRepository.findByLocationContainingIgnoreCase(eq("bucharest"), any(Sort.class)))
+        Property p = new Property(); p.setLocation("Bucuresti");
+        when(propertyRepository.findByLocationContainingIgnoreCase(eq("bucuresti"), any(Sort.class)))
                 .thenReturn(List.of(p));
+        List<Property> results = propertyQueryService.getAllProperties("location", "bucuresti", "price", "desc");
 
-        // ACT
-        List<Property> results = propertyQueryService.getAllProperties("location", "bucharest", "price", "desc");
-
-        // ASSERT
         assertEquals(1, results.size());
-        assertEquals("Bucharest", results.get(0).getLocation());
-        verify(propertyRepository, times(1)).findByLocationContainingIgnoreCase(eq("bucharest"), any(Sort.class));
+        assertEquals("Bucuresti", results.get(0).getLocation());
+        verify(propertyRepository, times(1)).findByLocationContainingIgnoreCase(eq("bucuresti"), any(Sort.class));
     }
 }

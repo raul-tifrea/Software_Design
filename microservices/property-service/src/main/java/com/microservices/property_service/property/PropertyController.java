@@ -33,7 +33,6 @@ public class PropertyController {
         if(propertyExportStrategy == null){
             return ResponseEntity.badRequest().body("Invalid format requested");
         }
-        // Assuming your strategy returns the file bytes/string
         return ResponseEntity.ok(propertyExportStrategy.export(properties));
     }
 
@@ -80,7 +79,6 @@ public class PropertyController {
     @GetMapping("/{propertyId}")
     public ResponseEntity<?> getPropertyById(@PathVariable Integer propertyId) {
         try {
-            // Make sure getPropertyById exists in your PropertyQueryService!
             Property property = propertyQueryService.getPropertyById(propertyId);
             return ResponseEntity.ok(property);
         } catch (RuntimeException e) {

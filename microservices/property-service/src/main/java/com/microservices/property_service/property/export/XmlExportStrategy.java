@@ -30,7 +30,6 @@ public class XmlExportStrategy extends BasePropertyExporter implements PropertyE
 
     @Override
     public String export(List<Property> properties) {
-        // Trigger the template method
         return super.executeExport(properties);
     }
 }
