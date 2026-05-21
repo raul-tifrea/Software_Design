@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Users - Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f4f9; }
+        .panel { padding: 20px; border-radius: 8px; margin-bottom: 20px; background: white; border: 1px solid #ddd; }
+        input, select, button { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
+        button { cursor: pointer; background-color: #007bff; color: white; border: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-edit { background-color: #ffc107; color: black; }
+
+        .lang-bar { display: flex; gap: 6px; }
+        .lang-bar button { padding: 5px 10px; font-size: 0.8em; background-color: #6c757d; margin: 0; }
+        .lang-bar button.active { background-color: #007bff; }
+    </style>
+</head>
+<body>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 id="pageTitle">Admin Panel: Manage Users</h2>
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div class="lang-bar">
+            <button onclick="setLang('en')" id="langEn" class="active">EN</button>
+            <button onclick="setLang('ro')" id="langRo">RO</button>
+            <button onclick="setLang('es')" id="langEs">ES</button>
+        </div>
+        <button style="background-color: #6c757d;" onclick="window.location.href='dashboard.html'" id="backBtn">&larr; Back to Dashboard</button>
+    </div>
+</div>
+
+<div class="panel">
+    <h3 id="createTitle">Create New User</h3>
+    <input type="text"     id="newUsername" placeholder="Username" required>
+    <input type="email"    id="newEmail"    placeholder="Email Address" required>
+    <input type="password" id="newPassword" placeholder="Password" required>
+    <select id="newRole">
+        <option value="SELLER_BUYER">SELLER_BUYER</option>
+        <option value="ADMIN">ADMIN</option>
+    </select>
+    <button style="background-color: #28a745;" onclick="createUser()" id="createUserBtn">Create User</button>
+</div>
+
+<div class="panel">
+    <h3 id="currentUsersTitle">Current Users</h3>
+    <table>
+        <thead>
+        <tr>
+            <th id="thId">ID</th>
+            <th id="thUsername">Username</th>
+            <th id="thEmail">Email</th>
+            <th id="thRole">Role</th>
+            <th id="thActions">Actions</th>
+        </tr>
+        </thead>
+        <tbody id="usersList"></tbody>
+    </table>
+</div>
+
+<script>
+    const USER_SERVICE  = 'http://localhost:8082';
+    const currentUserId = localStorage.getItem('userId');
+    const authToken     = localStorage.getItem('authToken');
+    let   currentLang   = localStorage.getItem('lang') || 'en';
+
+    if (!authToken || authToken === '') {
+        window.location.href = 'auth.html';
+    }
+
+    const securityHeaders = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic ' + authToken
+    };
+
+    // --- Language support ---
+    const translations = {
+        en: {
+            pageTitle: 'Admin Panel: Manage Users',
+            backBtn: '\u2190 Back to Dashboard',
+            createTitle: 'Create New User',
+            createUserBtn: 'Create User',
+            currentUsersTitle: 'Current Users',
+            thId: 'ID', thUsername: 'Username', thEmail: 'Email', thRole: 'Role', thActions: 'Actions',
+            newUsernamePlaceholder: 'Username',
+            newEmailPlaceholder: 'Email Address',
+            newPasswordPlaceholder: 'Password',
+            editBtn: 'Edit',
+            deleteBtn: 'Delete',
+            confirmDelete: 'Are you sure you want to permanently delete this user?',
+            editPromptUsername: 'New Username:',
+            editPromptEmail: 'New Email:',
+            editPromptPassword: 'New Password (leave blank to keep current):',
+            editPromptRole: 'New Role (ADMIN or SELLER_BUYER):',
+            errorUnauthorized: 'Unauthorized. Please log out and log back in.'
+        },
+        ro: {
+            pageTitle: 'Panou Admin: Gestionare Utilizatori',
+            backBtn: '\u2190 Inapoi la Dashboard',
+            createTitle: 'Creeaza Utilizator Nou',
+            createUserBtn: 'Creeaza Utilizator',
+            currentUsersTitle: 'Utilizatori Actuali',
+            thId: 'ID', thUsername: 'Utilizator', thEmail: 'Email', thRole: 'Rol', thActions: 'Actiuni',
+            newUsernamePlaceholder: 'Nume utilizator',
+            newEmailPlaceholder: 'Adresa de email',
+            newPasswordPlaceholder: 'Parola',
+            editBtn: 'Editeaza',
+            deleteBtn: 'Sterge',
+            confirmDelete: 'Esti sigur ca vrei sa stergi permanent acest utilizator?',
+            editPromptUsername: 'Nume utilizator nou:',
+            editPromptEmail: 'Email nou:',
+            editPromptPassword: 'Parola noua (lasa gol pentru a pastra actuala):',
+            editPromptRole: 'Rol nou (ADMIN sau SELLER_BUYER):',
+            errorUnauthorized: 'Neautorizat. Te rugam sa te deconectezi si sa te reconectezi.'
+        },
+        es: {
+            pageTitle: 'Panel Admin: Gestionar Usuarios',
+            backBtn: '\u2190 Volver al Dashboard',
+            createTitle: 'Crear Nuevo Usuario',
+            createUserBtn: 'Crear Usuario',
+            currentUsersTitle: 'Usuarios Actuales',
+            thId: 'ID', thUsername: 'Usuario', thEmail: 'Correo', thRole: 'Rol', thActions: 'Acciones',
+            newUsernamePlaceholder: 'Usuario',
+            newEmailPlaceholder: 'Correo electronico',
+            newPasswordPlaceholder: 'Contrasena',
+            editBtn: 'Editar',
+            deleteBtn: 'Eliminar',
+            confirmDelete: 'Estas seguro de que quieres eliminar permanentemente a este usuario?',
+            editPromptUsername: 'Nuevo nombre de usuario:',
+            editPromptEmail: 'Nuevo correo:',
+            editPromptPassword: 'Nueva contrasena (dejar en blanco para mantener la actual):',
+            editPromptRole: 'Nuevo rol (ADMIN o SELLER_BUYER):',
+            errorUnauthorized: 'No autorizado. Por favor cierra sesion y vuelve a iniciarla.'
+        }
+    };
+
+    function setLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('lang', lang);
+        const t = translations[lang];
+        document.getElementById('pageTitle').innerText = t.pageTitle;
+        document.getElementById('backBtn').innerText = t.backBtn;
+        document.getElementById('createTitle').innerText = t.createTitle;
+        document.getElementById('createUserBtn').innerText = t.createUserBtn;
+        document.getElementById('currentUsersTitle').innerText = t.currentUsersTitle;
+        document.getElementById('thId').innerText = t.thId;
+        document.getElementById('thUsername').innerText = t.thUsername;
+        document.getElementById('thEmail').innerText = t.thEmail;
+        document.getElementById('thRole').innerText = t.thRole;
+        document.getElementById('thActions').innerText = t.thActions;
+        document.getElementById('newUsername').placeholder = t.newUsernamePlaceholder;
+        document.getElementById('newEmail').placeholder = t.newEmailPlaceholder;
+        document.getElementById('newPassword').placeholder = t.newPasswordPlaceholder;
+        document.getElementById('langEn').classList.toggle('active', lang === 'en');
+        document.getElementById('langRo').classList.toggle('active', lang === 'ro');
+        document.getElementById('langEs').classList.toggle('active', lang === 'es');
+        loadUsers();
+    }
+
+    setLang(currentLang);
+
+    function loadUsers() {
+        const t = translations[currentLang];
+        fetch(`${USER_SERVICE}/api/users?reqId=${currentUserId}`, {
+            method: 'GET',
+            headers: { 'Authorization': 'Basic ' + authToken }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(t.errorUnauthorized);
+            return res.json();
+        })
+        .then(users => {
+            const list = document.getElementById('usersList');
+            list.innerHTML = '';
+            users.forEach(user => {
+                list.innerHTML += `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.username}</td>
+                        <td>${user.email}</td>
+                        <td>${user.role.roleName}</td>
+                        <td>
+                            <button class="btn-edit"   onclick="editUser(${user.id}, '${user.username}', '${user.email}', '${user.role.roleName}')">${t.editBtn}</button>
+                            <button class="btn-danger" onclick="deleteUser(${user.id})">${t.deleteBtn}</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            alert(err.message);
+        });
+    }
+
+    function createUser() {
+        const newUser = {
+            username:     document.getElementById('newUsername').value,
+            email:        document.getElementById('newEmail').value,
+            passwordHash: document.getElementById('newPassword').value,
+            role:         { roleName: document.getElementById('newRole').value }
+        };
+
+        fetch(`${USER_SERVICE}/api/users?reqId=${currentUserId}`, {
+            method: 'POST',
+            headers: securityHeaders,
+            body: JSON.stringify(newUser)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Could not create user');
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newEmail').value    = '';
+            document.getElementById('newPassword').value = '';
+            loadUsers();
+        })
+        .catch(err => alert(err.message));
+    }
+
+    function editUser(id, oldUsername, oldEmail, oldRole) {
+        const t           = translations[currentLang];
+        const newUsername = prompt(t.editPromptUsername, oldUsername);
+        const newEmail    = prompt(t.editPromptEmail, oldEmail);
+        const newPassword = prompt(t.editPromptPassword, '');
+        const newRole     = prompt(t.editPromptRole, oldRole);
+
+        if (!newUsername || !newEmail || !newRole) return;
+
+        const updatedUser = {
+            username:     newUsername,
+            email:        newEmail,
+            passwordHash: newPassword || undefined,
+            role:         { roleName: newRole }
+        };
+
+        fetch(`${USER_SERVICE}/api/users/${id}?reqId=${currentUserId}`, {
+            method: 'PUT',
+            headers: securityHeaders,
+            body: JSON.stringify(updatedUser)
+        })
+        .then(res => {
+            if (!res.ok) alert('Error updating user.');
+            loadUsers();
+        });
+    }
+
+    function deleteUser(id) {
+        const t = translations[currentLang];
+        if (!confirm(t.confirmDelete)) return;
+
+        fetch(`${USER_SERVICE}/api/users/${id}?reqId=${currentUserId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Basic ' + authToken }
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Could not delete user');
+            loadUsers();
+        })
+        .catch(err => alert(err.message));
+    }
+</script>
+</body>
+</html>

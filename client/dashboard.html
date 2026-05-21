@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real Estate Hub</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f4f9; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+        .panel { padding: 15px; border-radius: 8px; margin-bottom: 20px; background: white; border: 1px solid #ddd; }
+        .admin-panel { border-left: 5px solid #ff4d4d; }
+        .action-panel { border-left: 5px solid #28a745; }
+        .hidden { display: none; }
+
+        input, select, button { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
+        button { cursor: pointer; background-color: #007bff; color: white; border: none; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-edit { background-color: #ffc107; color: black; }
+        .btn-logout { background-color: #6c757d; }
+        .btn-chat { background-color: #17a2b8; }
+
+        .property-card { background: white; border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .property-info h3 { margin: 0 0 5px 0; color: #333; }
+        .property-info p { margin: 2px 0; color: #666; }
+        .price-tag { font-size: 1.2em; font-weight: bold; color: #28a745; }
+
+        .lang-bar { display: flex; gap: 6px; }
+        .lang-bar button { padding: 5px 10px; font-size: 0.8em; background-color: #6c757d; margin: 0; }
+        .lang-bar button.active { background-color: #007bff; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1 id="appTitle">Real Estate Hub</h1>
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div class="lang-bar">
+            <button onclick="setLang('en')" id="langEn" class="active">EN</button>
+            <button onclick="setLang('ro')" id="langRo">RO</button>
+            <button onclick="setLang('es')" id="langEs">ES</button>
+        </div>
+        <div style="text-align: right;">
+            <span id="loggedInLabel">Logged in as:</span> <strong id="displayUser"></strong><br>
+            <button class="btn-logout" id="logoutBtn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+</div>
+
+<div id="adminSection" class="panel admin-panel hidden">
+    <h3 id="adminTitle">Admin Controls</h3>
+    <button onclick="window.location.href='manage-users.html'" id="manageUsersBtn">Manage All Users</button>
+</div>
+
+<div id="addPropertySection" class="panel action-panel hidden">
+    <h3 id="addPropertyTitle">List a New Property</h3>
+    <input type="text" id="newTitle" placeholder="Title" required>
+    <input type="text" id="newLocation" placeholder="Location" required>
+    <input type="number" id="newPrice" placeholder="Price (€)" required>
+    <input type="text" id="newDesc" placeholder="Description" style="width: 300px;">
+    <input type="text" id="newImage" placeholder="Photo URL (https://...)">
+    <button onclick="createProperty()" id="postListingBtn">Post Listing</button>
+</div>
+
+<div class="panel">
+    <h3 id="searchTitle">Search &amp; Sort Properties</h3>
+    <select id="searchType">
+        <option value="location" id="optLocation">Search by Location</option>
+        <option value="title" id="optTitle">Search by Title</option>
+    </select>
+    <input type="text" id="keyword" placeholder="Enter search term...">
+
+    <strong style="margin-left: 15px;" id="sortLabel">Sort by:</strong>
+    <select id="sortBy">
+        <option value="price" id="optPrice">Price</option>
+        <option value="title" id="optSortTitle">Title</option>
+        <option value="location" id="optSortLoc">Location</option>
+    </select>
+    <select id="sortDir">
+        <option value="asc" id="optAsc">Ascending (Low-High / A-Z)</option>
+        <option value="desc" id="optDesc">Descending (High-Low / Z-A)</option>
+    </select>
+
+    <button style="background-color: #28a745;" onclick="loadProperties()" id="applyBtn">Apply Filters</button>
+    <button style="background-color: #6c757d;" onclick="resetFilters()" id="clearBtn">Clear</button>
+
+    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+        <strong id="exportLabel">Export Data: </strong>
+        <button style="background-color: #17a2b8;" onclick="downloadExport('csv')">CSV</button>
+        <button style="background-color: #fd7e14;" onclick="downloadExport('json')">JSON</button>
+        <button style="background-color: #6f42c1;" onclick="downloadExport('xml')">XML</button>
+    </div>
+</div>
+
+<div id="propertiesList"></div>
+
+<script>
+    const PROPERTY_SERVICE = 'http://localhost:8081';
+
+    const currentUserId = localStorage.getItem('userId');
+    const currentRole   = localStorage.getItem('roleName') || 'GUEST';
+    const currentUsername = localStorage.getItem('username') || 'Guest';
+    const authToken     = localStorage.getItem('authToken');
+    let   currentLang   = localStorage.getItem('lang') || 'en';
+
+    document.getElementById('displayUser').innerText = currentUsername;
+
+    if (currentRole === 'GUEST') {
+        document.getElementById('logoutBtn').innerText = 'Sign In / Register';
+        document.getElementById('logoutBtn').onclick = () => window.location.href = 'auth.html';
+    }
+
+    if (currentRole === 'ADMIN') {
+        document.getElementById('adminSection').classList.remove('hidden');
+        document.getElementById('addPropertySection').classList.remove('hidden');
+    } else if (currentRole === 'SELLER_BUYER') {
+        document.getElementById('addPropertySection').classList.remove('hidden');
+    }
+
+    // --- Language support ---
+    const translations = {
+        en: {
+            appTitle: 'Real Estate Hub',
+            loggedInLabel: 'Logged in as:',
+            adminTitle: 'Admin Controls',
+            manageUsersBtn: 'Manage All Users',
+            addPropertyTitle: 'List a New Property',
+            postListingBtn: 'Post Listing',
+            searchTitle: 'Search & Sort Properties',
+            optLocation: 'Search by Location',
+            optTitle: 'Search by Title',
+            sortLabel: 'Sort by:',
+            optPrice: 'Price',
+            optSortTitle: 'Title',
+            optSortLoc: 'Location',
+            optAsc: 'Ascending (Low-High / A-Z)',
+            optDesc: 'Descending (High-Low / Z-A)',
+            applyBtn: 'Apply Filters',
+            clearBtn: 'Clear',
+            exportLabel: 'Export Data: ',
+            newTitlePlaceholder: 'Title',
+            newLocationPlaceholder: 'Location',
+            newPricePlaceholder: 'Price (\u20ac)',
+            newDescPlaceholder: 'Description',
+            newImagePlaceholder: 'Photo URL (https://...)',
+            keywordPlaceholder: 'Enter search term...',
+            noProperties: '<p><i>No properties found matching those criteria.</i></p>',
+            editBtn: 'Edit',
+            deleteBtn: 'Delete',
+            locationLabel: 'Location:',
+            descLabel: 'Description:',
+            confirmDelete: 'Are you sure you want to delete this listing?',
+            exportError: 'Export failed! Make sure the backend is running.',
+            logoutBtn: 'Logout'
+        },
+        ro: {
+            appTitle: 'Real Estate Hub',
+            loggedInLabel: 'Conectat ca:',
+            adminTitle: 'Panou Administrator',
+            manageUsersBtn: 'Gestionare Utilizatori',
+            addPropertyTitle: 'Adauga o Proprietate',
+            postListingBtn: 'Publica Anuntul',
+            searchTitle: 'Cauta si Sorteaza Proprietati',
+            optLocation: 'Cauta dupa Locatie',
+            optTitle: 'Cauta dupa Titlu',
+            sortLabel: 'Sorteaza dupa:',
+            optPrice: 'Pret',
+            optSortTitle: 'Titlu',
+            optSortLoc: 'Locatie',
+            optAsc: 'Crescator (Mic-Mare / A-Z)',
+            optDesc: 'Descrescator (Mare-Mic / Z-A)',
+            applyBtn: 'Aplica Filtrele',
+            clearBtn: 'Sterge',
+            exportLabel: 'Exporta Date: ',
+            newTitlePlaceholder: 'Titlu',
+            newLocationPlaceholder: 'Locatie',
+            newPricePlaceholder: 'Pret (\u20ac)',
+            newDescPlaceholder: 'Descriere',
+            newImagePlaceholder: 'URL Imagine (https://...)',
+            keywordPlaceholder: 'Introdu termenul de cautare...',
+            noProperties: '<p><i>Nu s-au gasit proprietati.</i></p>',
+            editBtn: 'Editeaza',
+            deleteBtn: 'Sterge',
+            locationLabel: 'Locatie:',
+            descLabel: 'Descriere:',
+            confirmDelete: 'Esti sigur ca vrei sa stergi acest anunt?',
+            exportError: 'Exportul a esuat! Verifica daca serverul ruleaza.',
+            logoutBtn: 'Deconectare'
+        },
+        es: {
+            appTitle: 'Real Estate Hub',
+            loggedInLabel: 'Conectado como:',
+            adminTitle: 'Panel de Administrador',
+            manageUsersBtn: 'Gestionar Usuarios',
+            addPropertyTitle: 'Publicar una Propiedad',
+            postListingBtn: 'Publicar Anuncio',
+            searchTitle: 'Buscar y Ordenar Propiedades',
+            optLocation: 'Buscar por Ubicacion',
+            optTitle: 'Buscar por Titulo',
+            sortLabel: 'Ordenar por:',
+            optPrice: 'Precio',
+            optSortTitle: 'Titulo',
+            optSortLoc: 'Ubicacion',
+            optAsc: 'Ascendente (Menor-Mayor / A-Z)',
+            optDesc: 'Descendente (Mayor-Menor / Z-A)',
+            applyBtn: 'Aplicar Filtros',
+            clearBtn: 'Limpiar',
+            exportLabel: 'Exportar Datos: ',
+            newTitlePlaceholder: 'Titulo',
+            newLocationPlaceholder: 'Ubicacion',
+            newPricePlaceholder: 'Precio (\u20ac)',
+            newDescPlaceholder: 'Descripcion',
+            newImagePlaceholder: 'URL de Imagen (https://...)',
+            keywordPlaceholder: 'Introduce el termino de busqueda...',
+            noProperties: '<p><i>No se encontraron propiedades.</i></p>',
+            editBtn: 'Editar',
+            deleteBtn: 'Eliminar',
+            locationLabel: 'Ubicacion:',
+            descLabel: 'Descripcion:',
+            confirmDelete: 'Estas seguro de que quieres eliminar este anuncio?',
+            exportError: 'Error de exportacion! Asegurate de que el servidor esta activo.',
+            logoutBtn: 'Cerrar Sesion'
+        }
+    };
+
+    function setLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('lang', lang);
+        const t = translations[lang];
+        document.getElementById('appTitle').innerText = t.appTitle;
+        document.getElementById('loggedInLabel').innerText = t.loggedInLabel;
+        document.getElementById('adminTitle').innerText = t.adminTitle;
+        document.getElementById('manageUsersBtn').innerText = t.manageUsersBtn;
+        document.getElementById('addPropertyTitle').innerText = t.addPropertyTitle;
+        document.getElementById('postListingBtn').innerText = t.postListingBtn;
+        document.getElementById('searchTitle').innerText = t.searchTitle;
+        document.getElementById('optLocation').innerText = t.optLocation;
+        document.getElementById('optTitle').innerText = t.optTitle;
+        document.getElementById('sortLabel').innerText = t.sortLabel;
+        document.getElementById('optPrice').innerText = t.optPrice;
+        document.getElementById('optSortTitle').innerText = t.optSortTitle;
+        document.getElementById('optSortLoc').innerText = t.optSortLoc;
+        document.getElementById('optAsc').innerText = t.optAsc;
+        document.getElementById('optDesc').innerText = t.optDesc;
+        document.getElementById('applyBtn').innerText = t.applyBtn;
+        document.getElementById('clearBtn').innerText = t.clearBtn;
+        document.getElementById('exportLabel').innerText = t.exportLabel;
+        document.getElementById('newTitle').placeholder = t.newTitlePlaceholder;
+        document.getElementById('newLocation').placeholder = t.newLocationPlaceholder;
+        document.getElementById('newPrice').placeholder = t.newPricePlaceholder;
+        document.getElementById('newDesc').placeholder = t.newDescPlaceholder;
+        document.getElementById('newImage').placeholder = t.newImagePlaceholder;
+        document.getElementById('keyword').placeholder = t.keywordPlaceholder;
+        if (currentRole !== 'GUEST') {
+            document.getElementById('logoutBtn').innerText = t.logoutBtn;
+        }
+
+        document.getElementById('langEn').classList.toggle('active', lang === 'en');
+        document.getElementById('langRo').classList.toggle('active', lang === 'ro');
+        document.getElementById('langEs').classList.toggle('active', lang === 'es');
+
+        loadProperties();
+    }
+
+    setLang(currentLang);
+
+    function loadProperties() {
+        const searchType = document.getElementById('searchType').value;
+        const keyword    = document.getElementById('keyword').value;
+        const sortBy     = document.getElementById('sortBy').value;
+        const sortDir    = document.getElementById('sortDir').value;
+        const t          = translations[currentLang];
+
+        const url = `${PROPERTY_SERVICE}/api/properties?searchType=${searchType}&keyWord=${keyword}&sortBy=${sortBy}&sortDir=${sortDir}`;
+
+        fetch(url)
+        .then(res => res.json())
+        .then(properties => {
+            const list = document.getElementById('propertiesList');
+            list.innerHTML = '';
+
+            if (properties.length === 0) {
+                list.innerHTML = t.noProperties;
+                return;
+            }
+
+            properties.forEach(prop => {
+                const isOwner = prop.sellerId === parseInt(currentUserId);
+                const isAdmin = currentRole === 'ADMIN';
+                const canEdit = isAdmin || (currentRole === 'SELLER_BUYER' && isOwner);
+
+                let actionButtons = '';
+                if (canEdit) {
+                    actionButtons = `
+                        <button class="btn-edit" onclick="editProperty(${prop.id}, '${prop.title}', '${prop.location}', ${prop.price}, '${prop.description || ''}', '${prop.imageUrl || ''}')">${t.editBtn}</button>
+                        <button class="btn-danger" onclick="deleteProperty(${prop.id})">${t.deleteBtn}</button>
+                    `;
+                }
+
+                list.innerHTML += `
+                    <div class="property-card">
+                        <img src="${prop.imageUrl || 'https://placehold.co/150x150?text=No+Image'}" alt="Property" style="width: 150px; height: 150px; object-fit: cover; border-radius: 5px; margin-right: 20px;">
+                        <div class="property-info" style="flex-grow: 1;">
+                            <h3>${prop.title}</h3>
+                            <p><strong>${t.locationLabel}</strong> ${prop.location}</p>
+                            <p><strong>${t.descLabel}</strong> ${prop.description || ''}</p>
+                        </div>
+                        <div style="text-align: right; min-width: 120px;">
+                            <div class="price-tag">&euro;${prop.price.toLocaleString()}</div>
+                            <div style="margin-top: 10px;">${actionButtons}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        })
+        .catch(err => {
+            document.getElementById('propertiesList').innerHTML = `<p style="color:red;">${err.message}</p>`;
+        });
+    }
+
+    function createProperty() {
+        const newProp = {
+            title:       document.getElementById('newTitle').value,
+            location:    document.getElementById('newLocation').value,
+            price:       parseFloat(document.getElementById('newPrice').value),
+            description: document.getElementById('newDesc').value,
+            imageUrl:    document.getElementById('newImage').value
+        };
+
+        fetch(`${PROPERTY_SERVICE}/api/properties?sellerId=${currentUserId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + authToken },
+            body: JSON.stringify(newProp)
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Could not create property');
+            document.getElementById('newTitle').value    = '';
+            document.getElementById('newLocation').value = '';
+            document.getElementById('newPrice').value    = '';
+            document.getElementById('newDesc').value     = '';
+            document.getElementById('newImage').value    = '';
+            loadProperties();
+        })
+        .catch(err => alert(err.message));
+    }
+
+    function editProperty(id, oldTitle, oldLoc, oldPrice, oldDesc, oldImage) {
+        const newTitle = prompt('New Title:', oldTitle);
+        const newLoc   = prompt('New Location:', oldLoc);
+        const newPrice = prompt('New Price:', oldPrice);
+        const newDesc  = prompt('New Description:', oldDesc);
+        const newImage = prompt('New Image URL:', oldImage);
+
+        if (newTitle && newLoc && newPrice) {
+            const updatedProp = {
+                title:       newTitle,
+                location:    newLoc,
+                price:       parseFloat(newPrice),
+                description: newDesc,
+                imageUrl:    newImage
+            };
+
+            fetch(`${PROPERTY_SERVICE}/api/properties/${id}?sellerId=${currentUserId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + authToken },
+                body: JSON.stringify(updatedProp)
+            })
+            .then(res => {
+                if (!res.ok) alert('Error updating property.');
+                loadProperties();
+            });
+        }
+    }
+
+    function deleteProperty(id) {
+        if (!confirm(translations[currentLang].confirmDelete)) return;
+
+        fetch(`${PROPERTY_SERVICE}/api/properties/${id}?sellerId=${currentUserId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Basic ' + authToken }
+        })
+        .then(res => {
+            if (!res.ok) alert('Error deleting property.');
+            loadProperties();
+        });
+    }
+
+    function resetFilters() {
+        document.getElementById('keyword').value = '';
+        loadProperties();
+    }
+
+    function downloadExport(format) {
+        const searchType = document.getElementById('searchType').value;
+        const keyword    = document.getElementById('keyword').value;
+        const sortBy     = document.getElementById('sortBy').value;
+        const sortDir    = document.getElementById('sortDir').value;
+
+        const url = `${PROPERTY_SERVICE}/api/properties/export?format=${format}&searchType=${searchType}&keyWord=${keyword}&sortBy=${sortBy}&sortDir=${sortDir}`;
+
+        fetch(url, { method: 'GET', headers: { 'Authorization': 'Basic ' + authToken } })
+        .then(res => {
+            if (!res.ok) throw new Error(translations[currentLang].exportError);
+            return res.blob();
+        })
+        .then(blob => {
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `properties.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+        })
+        .catch(err => alert(err.message));
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'auth.html';
+    }
+
+    loadProperties();
+</script>
+</body>
+</html>

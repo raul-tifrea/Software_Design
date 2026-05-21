@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real Estate Hub</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 80px; background-color: #f4f4f9; }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .box {
+            border: 1px solid #ddd;
+            padding: 30px;
+            width: 320px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .hidden { display: none; }
+
+        input {
+            display: block;
+            width: 90%;
+            margin: 12px auto;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 12px 20px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 96%;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        button.success { background-color: #28a745; }
+
+        .link-btn {
+            background: none;
+            color: #007bff;
+            border: none;
+            padding: 0;
+            font: inherit;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 15px;
+            font-size: 0.9em;
+            width: auto;
+        }
+
+        .guest-btn {
+            background: none;
+            color: #6c757d;
+            border: none;
+            padding: 0;
+            font: inherit;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 10px;
+            font-size: 0.9em;
+            width: auto;
+        }
+
+        .divider {
+            margin: 20px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .message { margin-top: 15px; font-weight: bold; font-size: 0.9em; }
+        .error { color: red; }
+
+        .lang-bar {
+            position: fixed;
+            top: 12px;
+            right: 20px;
+            display: flex;
+            gap: 6px;
+        }
+        .lang-bar button {
+            width: auto;
+            padding: 5px 10px;
+            font-size: 0.8em;
+            background-color: #6c757d;
+            margin: 0;
+        }
+        .lang-bar button.active { background-color: #007bff; }
+    </style>
+</head>
+<body>
+
+<div class="lang-bar">
+    <button onclick="setLang('en')" id="langEn" class="active">EN</button>
+    <button onclick="setLang('ro')" id="langRo">RO</button>
+    <button onclick="setLang('es')" id="langEs">ES</button>
+</div>
+
+<h1 id="appTitle" style="color: #333; margin-bottom: 30px;">Real Estate Hub</h1>
+
+<div class="container">
+
+    <div class="box" id="loginView">
+        <h2 id="loginTitle" style="margin-top: 0; color: #333;">Sign In</h2>
+        <input type="text" id="loginUsername" placeholder="Username" required>
+        <input type="password" id="loginPassword" placeholder="Password" required>
+        <button onclick="attemptLogin()" id="loginBtn">Log In</button>
+        <div id="loginMsg" class="message error"></div>
+
+        <button class="link-btn" onclick="toggleView('registerView')" id="goRegister">Register</button>
+
+        <div class="divider"></div>
+
+        <button class="guest-btn" onclick="continueAsGuest()" id="guestBtn">Continue as Guest &rarr;</button>
+    </div>
+
+    <div class="box hidden" id="registerView">
+        <h2 id="registerTitle" style="margin-top: 0; color: #333;">Create Account</h2>
+        <input type="text" id="regUsername" placeholder="Choose a Username" required>
+        <input type="email" id="regEmail" placeholder="Email Address" required>
+        <input type="password" id="regPassword" placeholder="Create a Password" required>
+        <button class="success" onclick="attemptRegister()" id="registerBtn">Register</button>
+        <div id="regMsg" class="message"></div>
+
+        <button class="link-btn" style="color: #666;" onclick="toggleView('loginView')" id="backLogin">&larr; Back to Login</button>
+    </div>
+
+</div>
+
+<script>
+    const USER_SERVICE = 'http://localhost:8082';
+
+    // --- Language support ---
+    const translations = {
+        en: {
+            appTitle: 'Real Estate Hub',
+            loginTitle: 'Sign In',
+            loginBtn: 'Log In',
+            loginUserPlaceholder: 'Username',
+            loginPassPlaceholder: 'Password',
+            goRegister: 'Register',
+            guestBtn: 'Continue as Guest \u2192',
+            registerTitle: 'Create Account',
+            registerBtn: 'Register',
+            regUserPlaceholder: 'Choose a Username',
+            regEmailPlaceholder: 'Email Address',
+            regPassPlaceholder: 'Create a Password',
+            backLogin: '\u2190 Back to Login',
+            successMsg: 'Account created! You can now log in.',
+            invalidCreds: 'Invalid credentials'
+        },
+        ro: {
+            appTitle: 'Real Estate Hub',
+            loginTitle: 'Autentificare',
+            loginBtn: 'Conectare',
+            loginUserPlaceholder: 'Nume utilizator',
+            loginPassPlaceholder: 'Parola',
+            goRegister: 'Inregistrare',
+            guestBtn: 'Continua ca Vizitator \u2192',
+            registerTitle: 'Creare Cont',
+            registerBtn: 'Inregistreaza-te',
+            regUserPlaceholder: 'Alege un nume de utilizator',
+            regEmailPlaceholder: 'Adresa de email',
+            regPassPlaceholder: 'Creeaza o parola',
+            backLogin: '\u2190 Inapoi la Login',
+            successMsg: 'Cont creat! Te poti autentifica acum.',
+            invalidCreds: 'Date de acces incorecte'
+        },
+        es: {
+            appTitle: 'Real Estate Hub',
+            loginTitle: 'Iniciar Sesion',
+            loginBtn: 'Entrar',
+            loginUserPlaceholder: 'Usuario',
+            loginPassPlaceholder: 'Contrasena',
+            goRegister: 'Registrarse',
+            guestBtn: 'Continuar como Visitante \u2192',
+            registerTitle: 'Crear Cuenta',
+            registerBtn: 'Registrarse',
+            regUserPlaceholder: 'Elige un nombre de usuario',
+            regEmailPlaceholder: 'Correo electronico',
+            regPassPlaceholder: 'Crea una contrasena',
+            backLogin: '\u2190 Volver al Login',
+            successMsg: 'Cuenta creada! Ya puedes iniciar sesion.',
+            invalidCreds: 'Credenciales invalidas'
+        }
+    };
+
+    let currentLang = localStorage.getItem('lang') || 'en';
+
+    function setLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('lang', lang);
+        const t = translations[lang];
+        document.getElementById('appTitle').innerText = t.appTitle;
+        document.getElementById('loginTitle').innerText = t.loginTitle;
+        document.getElementById('loginBtn').innerText = t.loginBtn;
+        document.getElementById('loginUsername').placeholder = t.loginUserPlaceholder;
+        document.getElementById('loginPassword').placeholder = t.loginPassPlaceholder;
+        document.getElementById('goRegister').innerText = t.goRegister;
+        document.getElementById('guestBtn').innerText = t.guestBtn;
+        document.getElementById('registerTitle').innerText = t.registerTitle;
+        document.getElementById('registerBtn').innerText = t.registerBtn;
+        document.getElementById('regUsername').placeholder = t.regUserPlaceholder;
+        document.getElementById('regEmail').placeholder = t.regEmailPlaceholder;
+        document.getElementById('regPassword').placeholder = t.regPassPlaceholder;
+        document.getElementById('backLogin').innerText = t.backLogin;
+
+        document.getElementById('langEn').classList.toggle('active', lang === 'en');
+        document.getElementById('langRo').classList.toggle('active', lang === 'ro');
+        document.getElementById('langEs').classList.toggle('active', lang === 'es');
+    }
+
+    // Apply language on load
+    setLang(currentLang);
+
+    // If already logged in go straight to dashboard
+    if (localStorage.getItem('userId')) {
+        window.location.href = 'dashboard.html';
+    }
+
+    function toggleView(viewId) {
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('registerView').classList.add('hidden');
+        document.getElementById('loginMsg').innerText = '';
+        document.getElementById('regMsg').innerText = '';
+        document.getElementById(viewId).classList.remove('hidden');
+    }
+
+    function attemptLogin() {
+        const user = document.getElementById('loginUsername').value;
+        const pass = document.getElementById('loginPassword').value;
+
+        document.getElementById('loginMsg').innerText = '';
+
+        const encodedToken = btoa(user + ':' + pass);
+
+        fetch(`${USER_SERVICE}/api/users/login?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`, { method: 'POST' })
+        .then(async response => {
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || translations[currentLang].invalidCreds);
+            }
+            return response.json();
+        })
+        .then(data => {
+            localStorage.setItem('userId', data.id);
+            localStorage.setItem('roleName', data.role.roleName);
+            localStorage.setItem('username', data.username);
+            localStorage.setItem('authToken', encodedToken);
+            window.location.href = 'dashboard.html';
+        })
+        .catch(error => document.getElementById('loginMsg').innerText = error.message);
+    }
+
+    function attemptRegister() {
+        const newUser = {
+            username: document.getElementById('regUsername').value,
+            email: document.getElementById('regEmail').value,
+            passwordHash: document.getElementById('regPassword').value,
+            role: { roleName: 'SELLER_BUYER' }
+        };
+
+        fetch(`${USER_SERVICE}/api/users/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newUser)
+        })
+        .then(async response => {
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Registration failed');
+            }
+            return response.json();
+        })
+        .then(() => {
+            const msgBox = document.getElementById('regMsg');
+            msgBox.style.color = 'green';
+            msgBox.innerText = translations[currentLang].successMsg;
+            document.getElementById('regUsername').value = '';
+            document.getElementById('regEmail').value = '';
+            document.getElementById('regPassword').value = '';
+            setTimeout(() => toggleView('loginView'), 2000);
+        })
+        .catch(error => {
+            const msgBox = document.getElementById('regMsg');
+            msgBox.style.color = 'red';
+            msgBox.innerText = error.message;
+        });
+    }
+
+    function continueAsGuest() {
+        localStorage.setItem('userId', '');
+        localStorage.setItem('roleName', 'GUEST');
+        localStorage.setItem('username', 'Guest Visitor');
+        localStorage.setItem('authToken', '');
+        window.location.href = 'dashboard.html';
+    }
+</script>
+</body>
+</html>
