@@ -9,7 +9,7 @@
         .panel { padding: 15px; border-radius: 8px; margin-bottom: 20px; background: white; border: 1px solid #ddd; }
         .admin-panel { border-left: 5px solid #ff4d4d; }
         .action-panel { border-left: 5px solid #28a745; }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
 
         input, select, button { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
         button { cursor: pointer; background-color: #007bff; color: white; border: none; }
@@ -22,6 +22,20 @@
         .property-info h3 { margin: 0 0 5px 0; color: #333; }
         .property-info p { margin: 2px 0; color: #666; }
         .price-tag { font-size: 1.2em; font-weight: bold; color: #28a745; }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: white; padding: 20px; border-radius: 8px; width: 400px; max-width: 90%; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 10px; }
+        
+        #chatBox { height: 300px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; padding: 10px; background: #f9f9f9; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;}
+        .message { padding: 8px 12px; border-radius: 5px; max-width: 80%; }
+        .message.mine { background-color: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 0; }
+        .message.theirs { background-color: #e9ecef; color: #333; align-self: flex-start; border-bottom-left-radius: 0; }
+        .message.system { background-color: transparent; color: #888; text-align: center; align-self: center; font-style: italic; font-size: 0.85em; }
+        .message .sender { font-size: 0.8em; font-weight: bold; margin-bottom: 3px; }
+        .chat-input-row { display: flex; gap: 8px; }
+        .chat-input-row input { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
 
         .lang-bar { display: flex; gap: 6px; }
         .lang-bar button { padding: 5px 10px; font-size: 0.8em; background-color: #6c757d; margin: 0; }
@@ -92,6 +106,20 @@
 
 <div id="propertiesList"></div>
 
+<div id="chatModal" class="modal-overlay hidden">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 style="margin: 0;" id="chatModalTitle">Property Q&A</h3>
+            <button style="background: none; border: none; color: #888; font-size: 1.2em; margin: 0; padding: 0;" onclick="closeChat()">✕</button>
+        </div>
+        <div id="chatBox"></div>
+        <div class="chat-input-row">
+            <input type="text" id="chatInput" placeholder="Type a message..." disabled>
+            <button id="sendBtn" onclick="sendChatMessage()" disabled>Send</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const PROPERTY_SERVICE = 'http://localhost:8081';
 
@@ -142,6 +170,9 @@
             newDescPlaceholder: 'Description',
             newImagePlaceholder: 'Photo URL (https://...)',
             keywordPlaceholder: 'Enter search term...',
+            qaBtn: 'Live Q&A',
+            chatPlaceholder: 'Type a message...',
+            sendBtn: 'Send',
             noProperties: '<p><i>No properties found matching those criteria.</i></p>',
             editBtn: 'Edit',
             deleteBtn: 'Delete',
@@ -176,6 +207,9 @@
             newDescPlaceholder: 'Descriere',
             newImagePlaceholder: 'URL Imagine (https://...)',
             keywordPlaceholder: 'Introdu termenul de cautare...',
+            qaBtn: 'Q&A Live',
+            chatPlaceholder: 'Scrie un mesaj...',
+            sendBtn: 'Trimite',
             noProperties: '<p><i>Nu s-au gasit proprietati.</i></p>',
             editBtn: 'Editeaza',
             deleteBtn: 'Sterge',
@@ -210,6 +244,9 @@
             newDescPlaceholder: 'Descripcion',
             newImagePlaceholder: 'URL de Imagen (https://...)',
             keywordPlaceholder: 'Introduce el termino de busqueda...',
+            qaBtn: 'Q&A en Vivo',
+            chatPlaceholder: 'Escribe un mensaje...',
+            sendBtn: 'Enviar',
             noProperties: '<p><i>No se encontraron propiedades.</i></p>',
             editBtn: 'Editar',
             deleteBtn: 'Eliminar',
@@ -249,6 +286,8 @@
         document.getElementById('newDesc').placeholder = t.newDescPlaceholder;
         document.getElementById('newImage').placeholder = t.newImagePlaceholder;
         document.getElementById('keyword').placeholder = t.keywordPlaceholder;
+        document.getElementById('chatInput').placeholder = t.chatPlaceholder;
+        document.getElementById('sendBtn').innerText = t.sendBtn;
         if (currentRole !== 'GUEST') {
             document.getElementById('logoutBtn').innerText = t.logoutBtn;
         }
@@ -289,10 +328,13 @@
 
                 let actionButtons = '';
                 if (canEdit) {
-                    actionButtons = `
+                    actionButtons += `
                         <button class="btn-edit" onclick="editProperty(${prop.id}, '${prop.title}', '${prop.location}', ${prop.price}, '${prop.description || ''}', '${prop.imageUrl || ''}')">${t.editBtn}</button>
                         <button class="btn-danger" onclick="deleteProperty(${prop.id})">${t.deleteBtn}</button>
                     `;
+                }
+                if (currentRole !== 'GUEST') {
+                    actionButtons += `<button class="btn-chat" onclick="openChat(${prop.id}, '${prop.title}')">${t.qaBtn}</button>`;
                 }
 
                 list.innerHTML += `
@@ -420,6 +462,98 @@
     }
 
     loadProperties();
+
+    // --- WebSocket Chat Logic ---
+    let chatWs = null;
+    let currentChatPropertyId = null;
+
+    function openChat(propertyId, propertyTitle) {
+        currentChatPropertyId = propertyId;
+        document.getElementById('chatModalTitle').innerText = propertyTitle + ' Q&A';
+        document.getElementById('chatModal').classList.remove('hidden');
+        document.getElementById('chatBox').innerHTML = '';
+        
+        // Fetch chat history first
+        fetch(`http://localhost:8084/api/chat/${propertyId}`)
+            .then(res => res.json())
+            .then(history => {
+                const chatBox = document.getElementById('chatBox');
+                history.forEach(msg => {
+                    const isMine = msg.sender === currentUsername;
+                    const div = document.createElement('div');
+                    if (msg.type === 'JOIN') {
+                        div.className = 'message system';
+                        div.innerText = msg.content;
+                    } else {
+                        div.className = 'message ' + (isMine ? 'mine' : 'theirs');
+                        div.innerHTML = `<div class="sender">${msg.sender}</div><div>${msg.content}</div>`;
+                    }
+                    chatBox.appendChild(div);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                // After history is loaded, connect the WebSocket
+                connectWebSocket(propertyId);
+            })
+            .catch(err => console.error('Error fetching chat history:', err));
+    }
+
+    function connectWebSocket(propertyId) {
+        chatWs = new WebSocket(`ws://localhost:8084/ws/chat/${propertyId}`);
+        
+        chatWs.onopen = () => {
+            document.getElementById('chatInput').disabled = false;
+            document.getElementById('sendBtn').disabled = false;
+            chatWs.send(JSON.stringify({ sender: currentUsername, content: currentUsername + ' joined', type: 'JOIN' }));
+        };
+        
+        chatWs.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            const isMine = msg.sender === currentUsername;
+            const chatBox = document.getElementById('chatBox');
+            
+            const div = document.createElement('div');
+            if (msg.type === 'JOIN') {
+                div.className = 'message system';
+                div.innerText = msg.content;
+            } else {
+                div.className = 'message ' + (isMine ? 'mine' : 'theirs');
+                div.innerHTML = `<div class="sender">${msg.sender}</div><div>${msg.content}</div>`;
+            }
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+        
+        chatWs.onclose = () => {
+            document.getElementById('chatInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+        };
+    }
+
+    function closeChat() {
+        if (chatWs) {
+            chatWs.close();
+            chatWs = null;
+        }
+        document.getElementById('chatModal').classList.add('hidden');
+    }
+
+    function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text || !chatWs || chatWs.readyState !== WebSocket.OPEN) return;
+        
+        chatWs.send(JSON.stringify({
+            sender: currentUsername,
+            content: text,
+            type: 'CHAT'
+        }));
+        input.value = '';
+    }
+
+    document.getElementById('chatInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendChatMessage();
+    });
 </script>
 </body>
 </html>
