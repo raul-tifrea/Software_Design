@@ -38,51 +38,31 @@ public class PropertyController {
 
     @GetMapping
     public ResponseEntity<?> getAllProperties(@RequestParam(required = false) String searchType, @RequestParam(required = false) String searchName, @RequestParam(required = false) String keyWord, @RequestParam(defaultValue = "id") String sortBy, @RequestParam(defaultValue = "asc") String sortDir) {
-        try {
-            List<Property> properties = propertyQueryService.getAllProperties(searchType, keyWord, sortBy, sortDir);
-            return ResponseEntity.ok(properties);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        List<Property> properties = propertyQueryService.getAllProperties(searchType, keyWord, sortBy, sortDir);
+        return ResponseEntity.ok(properties);
     }
 
     @PostMapping
     public ResponseEntity<?> createProperty(@RequestBody Property property, @RequestParam Integer sellerId) {
-        try {
-            Property savedProperty = propertyCommandService.createProperty(property, sellerId);
-            return ResponseEntity.ok().body(savedProperty);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        Property savedProperty = propertyCommandService.createProperty(property, sellerId);
+        return ResponseEntity.ok().body(savedProperty);
     }
 
     @PutMapping("/{propertyId}")
     public ResponseEntity<?> updateProperty(@PathVariable Integer propertyId, @RequestBody Property property, @RequestParam Integer sellerId) {
-        try {
-            Property updatedProperty = propertyCommandService.updateProperty(propertyId, property, sellerId);
-            return ResponseEntity.ok(updatedProperty);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        Property updatedProperty = propertyCommandService.updateProperty(propertyId, property, sellerId);
+        return ResponseEntity.ok(updatedProperty);
     }
 
     @DeleteMapping("/{propertyId}")
     public ResponseEntity<?> deleteProperty(@PathVariable Integer propertyId, @RequestParam Integer sellerId) {
-        try {
-            propertyCommandService.deleteProperty(propertyId, sellerId);
-            return ResponseEntity.ok("Property has been deleted");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        propertyCommandService.deleteProperty(propertyId, sellerId);
+        return ResponseEntity.ok("Property has been deleted");
     }
 
     @GetMapping("/{propertyId}")
     public ResponseEntity<?> getPropertyById(@PathVariable Integer propertyId) {
-        try {
-            Property property = propertyQueryService.getPropertyById(propertyId);
-            return ResponseEntity.ok(property);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        Property property = propertyQueryService.getPropertyById(propertyId);
+        return ResponseEntity.ok(property);
     }
 }

@@ -19,22 +19,14 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam String username, @RequestParam String password){
-        try{
-            User user = userService.authenticate(username, password);
-            return ResponseEntity.ok(user);
-        }catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        User user = userService.authenticate(username, password);
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user){
-        try{
-            User newUser = userService.register(user);
-            return ResponseEntity.ok(newUser);
-        }catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        User newUser = userService.register(user);
+        return ResponseEntity.ok(newUser);
     }
 
     @GetMapping("/debug")
@@ -56,63 +48,38 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllUsers(@RequestParam Integer reqId)
-    {
-        try{
-            List<User> users = userService.getAllUser(reqId);
-            return ResponseEntity.ok(users);
-        }catch(RuntimeException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    public ResponseEntity<?> getAllUsers(@RequestParam Integer reqId) {
+        List<User> users = userService.getAllUser(reqId);
+        return ResponseEntity.ok(users);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Integer id) {
-        try {
-
-            User user = userService.getUserById(id);
-            java.util.Map<String, String> response = new java.util.HashMap<>();
-            response.put("username", user.getUsername());
-            response.put("email", user.getEmail());
-            response.put("roleName", user.getRole().getRoleName());
-
-            return ResponseEntity.ok(response);
-
-        } catch(RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        User user = userService.getUserById(id);
+        java.util.Map<String, String> response = new java.util.HashMap<>();
+        response.put("username", user.getUsername());
+        response.put("email", user.getEmail());
+        response.put("roleName", user.getRole().getRoleName());
+        return ResponseEntity.ok(response);
     }
     @PostMapping
     public ResponseEntity<?> addUser(@RequestBody User user, @RequestParam Integer reqId){
-        try{
-            User savedUser = userService.createUser(user,reqId);
-            return ResponseEntity.ok(savedUser);
-        }catch(RuntimeException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        User savedUser = userService.createUser(user,reqId);
+        return ResponseEntity.ok(savedUser);
     }
 
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Integer id, @RequestBody User user, @RequestParam Integer reqId){
-        try{
-            User updateduser = userService.updateUser(user, reqId, id);
-            return ResponseEntity.ok(updateduser);
-
-        }catch(RuntimeException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        User updateduser = userService.updateUser(user, reqId, id);
+        return ResponseEntity.ok(updateduser);
     }
 
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Integer id, @RequestParam Integer reqId){
-        try{
-            userService.deleteUser(id, reqId);
-            return ResponseEntity.ok("User has been deleted");
-        }catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        userService.deleteUser(id, reqId);
+        return ResponseEntity.ok("User has been deleted");
     }
 
 }
