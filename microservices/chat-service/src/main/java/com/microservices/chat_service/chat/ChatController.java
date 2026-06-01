@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "*") // Allow client to fetch history
+@CrossOrigin(origins = "*")
 public class ChatController {
 
     private final ChatMessageRepository chatMessageRepository;

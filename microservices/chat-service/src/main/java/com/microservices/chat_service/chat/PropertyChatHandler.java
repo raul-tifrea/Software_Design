@@ -15,7 +15,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class PropertyChatHandler extends TextWebSocketHandler {
 
-    // Dependency injection via constructor
     private final ChatMessageRepository chatMessageRepository;
 
     public PropertyChatHandler(ChatMessageRepository chatMessageRepository) {
@@ -53,11 +52,8 @@ public class PropertyChatHandler extends TextWebSocketHandler {
         if (chatMessage.getTimestamp() == null || chatMessage.getTimestamp().isBlank()) {
             chatMessage.setTimestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         }
-        
-        // Ensure propertyId is set correctly before saving
+
         chatMessage.setPropertyId(propertyId);
-        
-        // SAVE TO DATABASE
         chatMessageRepository.save(chatMessage);
 
         String broadcastPayload = objectMapper.writeValueAsString(chatMessage);

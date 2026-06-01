@@ -17,7 +17,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // Pass the repository to the handler manually
         registry.addHandler(new PropertyChatHandler(chatMessageRepository), "/ws/chat/{propertyId}")
                 .setAllowedOrigins("*");
     }
